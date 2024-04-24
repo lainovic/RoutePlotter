@@ -1,0 +1,42 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-width: 100vw;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  background-color: #282c34;
+  padding: 20px;
+}
+
+header {
+  background-color: #282c34;
+  font-weight: 700;
+  color: white;
+  align-self: flex-start;
+}
+
+main {
+  flex-grow: 1;
+  padding: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+#map {
+  height: 80vh; /* Set the height of the map container */
+  width: 80%; /* Set the width of the map container */
+  border-radius: 10px; /* Optional: add border radius for a rounded look */
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-left: 20px;
+}
