@@ -18,18 +18,32 @@ header {
 }
 
 main {
+  flex-direction: row;
   flex-grow: 1;
   padding: 20px;
   width: 100%;
   display: flex;
-  flex-direction: row;
   justify-content: center;
   align-items: center;
 }
 
+#map-container {
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+}
+
+#route-title {
+  margin-bottom: 10px;
+  font-style: italic;
+  font-size: 1rem;
+}
+
 #map {
   height: 80vh; /* Set the height of the map container */
-  width: 80%; /* Set the width of the map container */
+  width: 100%; /* Set the width of the map container */
   border-radius: 10px; /* Optional: add border radius for a rounded look */
 }
 

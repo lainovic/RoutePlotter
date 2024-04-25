@@ -3,7 +3,13 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { GeoPoint, log } from "./utils";
 
-export default function Map({ routePoints }: { routePoints: GeoPoint[] }) {
+export default function Map({
+  routePoints,
+  routeTitle,
+}: {
+  routePoints: GeoPoint[];
+  routeTitle: string;
+}) {
   const [map, setMap] = React.useState<L.Map | null>(null);
   const routeMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
 
@@ -35,7 +41,12 @@ export default function Map({ routePoints }: { routePoints: GeoPoint[] }) {
   }, [routePoints]);
 
   log("Map render with routePoints:", routePoints);
-  return <div id="map" style={{ height: "600px" }}></div>;
+  return (
+    <div id="map-container">
+      <div id="route-title">{routeTitle}</div>
+      <div id="map" style={{ height: "600px" }}></div>
+    </div>
+  );
 }
 
 function createMarkers(map: L.Map, routePoints: GeoPoint[]): L.LayerGroup {
