@@ -78,7 +78,7 @@ export default function Map({
   log("Map rendering");
   return (
     <>
-      <div id="route-checkboxes">
+      <div id="checkboxes">
         <div className="checkbox-container">
           <input
             disabled={routePoints.length === 0}

@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function FileReaderComponent({
-  onFileLoaded
+  onFileLoaded,
 }: {
   onFileLoaded: (content: string) => void;
 }) {
@@ -20,10 +20,5 @@ export default function FileReaderComponent({
     }
   };
 
-  return (
-    <div>
-      <div>Upload a JSON file with route data from TomTom Routing API</div>
-      <input type="file" onChange={handleFileInputChange} />
-    </div>
-  );
+  return <input type="file" onChange={handleFileInputChange} />;
 }

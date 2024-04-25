@@ -22,7 +22,7 @@ function App() {
   const [guidanceInstructions, setGuidanceInstructions] = React.useState<
     GuidanceInstruction[]
   >([]);
-  const [routeTitle, setRouteTitle] = React.useState<string>("");
+  const [routeSummary, setRouteSummary] = React.useState<Summary | null>(null);
 
   React.useEffect(() => {
     const routes: Route[] = extractRoutes(fileContent, onFailedToParse);
@@ -37,14 +37,7 @@ function App() {
       extractGuidanceInstructions(route);
     setGuidanceInstructions(guidanceInstructions);
     const summary: Summary = extractRouteSummary(route);
-    setRouteTitle(
-      `Length: ${
-        summary.lengthInMeters
-      } meters, Travel time: ${secondsToHoursMinutesSeconds(
-        summary.travelTimeInSeconds
-      )}`
-    );
-    summary.lengthInMeters;
+    setRouteSummary(summary);
     setLoaded(true);
   }, [fileContent]);
 
@@ -62,12 +55,29 @@ function App() {
               guidanceInstructions={guidanceInstructions}
             />
           ) : (
-            <img id="map-placeholder" src={mapPlaceholder} alt="TomTom Logo" />
+            <img
+              id="map-placeholder"
+              src={mapPlaceholder}
+              alt="TomTom Logo"
+              style={{ opacity: 0.5 }}
+            />
           )}
         </div>
-        <div className="buttons">
+        <div className="sidebar">
+          <div className="textField">
+            {loaded && routeSummary ? (
+              <>
+                <div>{`Length: ${routeSummary.lengthInMeters} meters`}</div>
+                <div>{`Travel time: ${secondsToHoursMinutesSeconds(
+                  routeSummary.travelTimeInSeconds || 0
+                )}`}</div>
+              </>
+            ) : (
+              "Upload a JSON file with route data from TomTom Routing API."
+            )}
+          </div>
           <FileReaderComponent onFileLoaded={setFileContent} />
-          {loaded && <div>{routeTitle}</div>}
+          {loaded && routeSummary && <div className="textField"></div>}
         </div>
       </main>
     </div>
