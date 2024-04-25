@@ -9,7 +9,7 @@ export interface Route {
   }[];
   summary: Summary;
   guidance: {
-    instructions: Instruction[];
+    instructions: GuidanceInstruction[];
   };
 }
 
@@ -18,7 +18,7 @@ export interface Summary {
   travelTimeInSeconds: number;
 }
 
-export interface Instruction {
+export interface GuidanceInstruction {
   drivingSide: string;
   maneuver: string;
   maneuverPoint: GeoPoint;

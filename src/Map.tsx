@@ -1,30 +1,40 @@
 import React from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { GeoPoint, log } from "./utils";
+import { log } from "./utils";
+import { GeoPoint, GuidanceInstruction } from "./types";
+import {
+  tomTomBlack,
+  tomtomDarkBlue,
+  tomtomOrange,
+  tomtomYellow,
+} from "./colors";
 
 export default function Map({
   routePoints,
-  routeTitle,
+  guidanceInstructions,
 }: {
   routePoints: GeoPoint[];
-  routeTitle: string;
+  guidanceInstructions: GuidanceInstruction[];
 }) {
-  const [map, setMap] = React.useState<L.Map | null>(null);
+  const [guidanceVisibility, setGuidanceVisibility] = React.useState(false);
+  const [routeVisibility, setRouteVisibility] = React.useState(true);
+  const map = React.useRef<L.Map | null>(null);
   const routeMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
+  const guidanceMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
+    log("Creating map");
     const newMap = L.map("map");
-    log("Map created");
 
     // Add tile layer from OpenStreetMap
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(newMap);
 
-    setMap(newMap);
+    map.current = newMap;
+    centerMapAtPoint(map.current, routePoints[0]);
 
-    // Clean up when component unmounts
     return () => {
       newMap.remove();
       log("Map removed");
@@ -32,43 +42,118 @@ export default function Map({
   }, []);
 
   React.useEffect(() => {
-    if (map) {
-      map.removeLayer(routeMarkers.current);
-      const markers = createMarkers(map, routePoints);
-      markers.addTo(map);
-      routeMarkers.current = markers;
-    }
+    log("Route points changed", routePoints);
+    routeMarkers.current = createRouteMarkers(routePoints);
   }, [routePoints]);
 
-  log("Map render with routePoints:", routePoints);
+  React.useEffect(() => {
+    log("Guidance instructions changed", guidanceInstructions);
+    guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
+  }, [guidanceInstructions]);
+
+  React.useEffect(() => {
+    log("Route visibility changed", routeVisibility);
+    const m = map.current;
+    if (m !== null) {
+      if (routeVisibility) {
+        routeMarkers.current.addTo(m);
+      } else {
+        m.removeLayer(routeMarkers.current);
+      }
+    }
+  }, [routeVisibility]);
+
+  React.useEffect(() => {
+    log("Guidance visibility changed", guidanceVisibility);
+    const m = map.current;
+    if (m !== null) {
+      if (guidanceVisibility) {
+        guidanceMarkers.current.addTo(m);
+      } else {
+        m.removeLayer(guidanceMarkers.current);
+      }
+    }
+  }, [guidanceVisibility]);
+
+  log("Map rendering");
   return (
-    <div id="map-container">
-      <div id="route-title">{routeTitle}</div>
+    <>
+      <div id="route-checkboxes">
+        <div className="checkbox-container">
+          <input
+            disabled={routePoints.length === 0}
+            type="checkbox"
+            id="routePoints"
+            defaultChecked={true}
+            onChange={(e) => setRouteVisibility(e.target.checked)}
+          />
+          <label htmlFor="routePoints">Route points</label>
+        </div>
+        <div className="checkbox-container">
+          <input
+            disabled={guidanceInstructions.length === 0}
+            type="checkbox"
+            id="instructions"
+            defaultChecked={false}
+            onChange={(e) => setGuidanceVisibility(e.target.checked)}
+          />
+          <label htmlFor="instructions">Guidance instructions</label>
+        </div>
+      </div>
       <div id="map" style={{ height: "600px" }}></div>
-    </div>
+    </>
   );
 }
 
-function createMarkers(map: L.Map, routePoints: GeoPoint[]): L.LayerGroup {
+function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
+  log("Creating route markers", routePoints);
   const markers = L.layerGroup();
   routePoints.forEach((point: GeoPoint, index: number) => {
     const { latitude, longitude } = point;
-    if (index === 0) {
-      map.setView([latitude, longitude], 13);
-    }
-    // treat the first and last point differently
     const color =
-      index === 0 ? "red" : index === routePoints.length - 1 ? "blue" : "green";
+      index === 0
+        ? tomtomOrange // origin
+        : index === routePoints.length - 1
+        ? tomTomBlack // destination
+        : tomtomYellow; // the rest
     const radius = index === 0 || index === routePoints.length - 1 ? 8 : 4;
     const m = L.circleMarker([latitude, longitude], {
       radius: radius,
       fillColor: color,
-      color: "#000",
+      color: tomtomDarkBlue,
       weight: 1,
       opacity: 1,
-      fillOpacity: 0.8,
-    });
+      fillOpacity: 1,
+    }).bindPopup(`<b>${index + 1}.</b> ${latitude}, ${longitude}`);
     markers.addLayer(m);
+  });
+  return markers;
+}
+
+function centerMapAtPoint(map: L.Map, point: GeoPoint) {
+  map.setView([point.latitude, point.longitude], 13);
+}
+
+function createGuidanceMarkers(
+  guidanceInstructions: GuidanceInstruction[]
+): L.LayerGroup {
+  log("Creating guidance markers", guidanceInstructions);
+  const markers = L.layerGroup();
+  guidanceInstructions.forEach((instruction, index) => {
+    const { latitude, longitude } = instruction.maneuverPoint;
+    const marker = L.marker([latitude, longitude], {
+      icon: L.divIcon({
+        className: "guidance-marker",
+        iconSize: [24, 24],
+        iconAnchor: [0, 24],
+        popupAnchor: [0, -36],
+      }),
+    }).bindPopup(
+      `<b>${index + 1}. ${instruction.maneuver}</b><br>routeOffsetInMeters: ${
+        instruction.routeOffsetInMeters
+      }<br>Point: ${latitude}, ${longitude}`
+    );
+    markers.addLayer(marker);
   });
   return markers;
 }

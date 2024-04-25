@@ -1,4 +1,4 @@
-import { GeoPoint, Route, Summary, Instruction } from "./types";
+import { GeoPoint, Route, Summary, GuidanceInstruction } from "./types";
 
 export const supportedVersion = "0.0.12";
 
@@ -26,7 +26,7 @@ export function extractRoutes(
   }
 }
 
-export function extractGuidanceInstructions(route: Route): Instruction[] {
+export function extractGuidanceInstructions(route: Route): GuidanceInstruction[] {
   return route.guidance.instructions;
 }
 

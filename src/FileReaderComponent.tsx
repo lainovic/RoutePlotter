@@ -22,6 +22,7 @@ export default function FileReaderComponent({
 
   return (
     <div>
+      <div>Upload a JSON file with route data from TomTom Routing API</div>
       <input type="file" onChange={handleFileInputChange} />
     </div>
   );
