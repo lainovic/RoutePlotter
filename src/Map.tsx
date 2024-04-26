@@ -24,6 +24,7 @@ export default function Map({
   const guidanceMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
   const startPointMarker = React.useRef<L.Marker | null>(null);
   const endPointMarker = React.useRef<L.Marker | null>(null);
+  const line = React.useRef<L.Polyline | null>(null);
 
   React.useLayoutEffect(() => {
     log("Creating map");
@@ -36,15 +37,34 @@ export default function Map({
 
     centerMapAtPoint(newMap, routePoints[0]);
 
+    var number1Icon = L.divIcon({
+      className: "custom-div-icon",
+      html: '<div class="number">1</div>',
+      iconSize: [30, 30],
+    });
+
+    var number2Icon = L.divIcon({
+      className: "custom-div-icon",
+      html: '<div class="number">2</div>',
+      iconSize: [30, 30],
+    });
+
     newMap.on("click", (e) => {
       if (startPointMarker.current === null) {
-        startPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng]).addTo(
-          newMap
-        );
+        startPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng], {
+          icon: number1Icon,
+        }).addTo(newMap);
       } else if (endPointMarker.current === null) {
-        endPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng]).addTo(
-          newMap
-        );
+        endPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng], {
+          icon: number2Icon,
+        }).addTo(newMap);
+        line.current = L.polyline(
+          [
+            startPointMarker.current.getLatLng(),
+            endPointMarker.current.getLatLng(),
+          ],
+          { color: tomtomDarkBlue }
+        ).addTo(newMap);
         L.popup()
           .setLatLng(e.latlng)
           .setContent(
@@ -61,6 +81,8 @@ export default function Map({
         startPointMarker.current = null;
         endPointMarker.current.remove();
         endPointMarker.current = null;
+        line.current?.remove();
+        line.current = null;
       }
     });
 
