@@ -22,6 +22,8 @@ export default function Map({
   const map = React.useRef<L.Map | null>(null);
   const routeMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
   const guidanceMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
+  const startPointMarker = React.useRef<L.Marker | null>(null);
+  const endPointMarker = React.useRef<L.Marker | null>(null);
 
   React.useLayoutEffect(() => {
     log("Creating map");
@@ -32,8 +34,37 @@ export default function Map({
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(newMap);
 
+    centerMapAtPoint(newMap, routePoints[0]);
+
+    newMap.on("click", (e) => {
+      if (startPointMarker.current === null) {
+        startPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng]).addTo(
+          newMap
+        );
+      } else if (endPointMarker.current === null) {
+        endPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng]).addTo(
+          newMap
+        );
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent(
+            "The distance between the points is: " +
+              startPointMarker.current
+                .getLatLng()
+                .distanceTo(endPointMarker.current.getLatLng())
+                .toFixed(2) +
+              " meters"
+          )
+          .openOn(newMap);
+      } else {
+        startPointMarker.current.remove();
+        startPointMarker.current = null;
+        endPointMarker.current.remove();
+        endPointMarker.current = null;
+      }
+    });
+
     map.current = newMap;
-    centerMapAtPoint(map.current, routePoints[0]);
 
     return () => {
       newMap.remove();
