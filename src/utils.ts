@@ -32,7 +32,6 @@ export function extractGuidanceInstructions(route: Route): GuidanceInstruction[]
 
 export function extractRouteSummary(route: Route): Summary {
   return route.summary;
-  //   return `Length: ${route.summary.lengthInMeters} meters, Travel time: ${route.summary.travelTimeInSeconds} seconds`;
 }
 
 export function secondsToHoursMinutesSeconds(seconds: number): string {

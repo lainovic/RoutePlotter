@@ -41,6 +41,9 @@ function App() {
     setLoaded(true);
   }, [fileContent]);
 
+  const fileInputRef = React.useRef<any>(null);
+
+
   return (
     <div className="App">
       <header className="App-header">
@@ -60,6 +63,7 @@ function App() {
               src={mapPlaceholder}
               alt="TomTom Logo"
               style={{ opacity: 0.5 }}
+              onClick={() => fileInputRef.current?.click()}
             />
           )}
         </div>
@@ -76,7 +80,7 @@ function App() {
               "Upload a JSON file with route data from TomTom Routing API."
             )}
           </div>
-          <FileReaderComponent onFileLoaded={setFileContent} />
+          <FileReaderComponent fileInputRef={fileInputRef} onFileLoaded={setFileContent} />
           {loaded && routeSummary && <div className="textField"></div>}
         </div>
       </main>

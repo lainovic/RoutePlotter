@@ -2,8 +2,10 @@ import React from "react";
 
 export default function FileReaderComponent({
   onFileLoaded,
+  fileInputRef,
 }: {
   onFileLoaded: (content: string) => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
 }) {
   const handleFileInputChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -20,5 +22,7 @@ export default function FileReaderComponent({
     }
   };
 
-  return <input type="file" onChange={handleFileInputChange} />;
+  return (
+    <input ref={fileInputRef} type="file" onChange={handleFileInputChange} />
+  );
 }
