@@ -1,4 +1,5 @@
 import { GeoPoint, Route, Summary, GuidanceInstruction } from "./types";
+import { log } from "./logging_utils";
 
 export const supportedVersion = "0.0.12";
 
@@ -26,7 +27,9 @@ export function extractRoutes(
   }
 }
 
-export function extractGuidanceInstructions(route: Route): GuidanceInstruction[] {
+export function extractGuidanceInstructions(
+  route: Route
+): GuidanceInstruction[] {
   return route.guidance.instructions;
 }
 
@@ -63,9 +66,4 @@ export function extractGeoPoints(
     onFailure("Error extracting geo points: " + error);
     return [];
   }
-}
-
-export function log(message: string, ...rest: any[]) {
-  const debug = true;
-  if (debug) console.log(message, rest);
 }

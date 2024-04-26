@@ -8,7 +8,7 @@ import {
   extractRoutes,
   extractRouteSummary,
   secondsToHoursMinutesSeconds,
-} from "./utils";
+} from "./route_utils";
 import { GeoPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";

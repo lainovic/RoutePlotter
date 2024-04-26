@@ -1,7 +1,7 @@
 import React from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { log } from "./utils";
+import { log } from "./logging_utils";
 import { GeoPoint, GuidanceInstruction } from "./types";
 import {
   tomTomBlack,
@@ -9,6 +9,12 @@ import {
   tomtomOrange,
   tomtomYellow,
 } from "./colors";
+import {
+  createLine,
+  createMarker,
+  createPopup,
+  cleanup,
+} from "./map_utils";
 
 export default function Map({
   routePoints,
@@ -50,39 +56,30 @@ export default function Map({
     });
 
     newMap.on("click", (e) => {
+      const { lat, lng } = e.latlng;
       if (startPointMarker.current === null) {
-        startPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng], {
-          icon: number1Icon,
-        }).addTo(newMap);
+        startPointMarker.current = createMarker(lat, lng, number1Icon).addTo(
+          newMap
+        );
       } else if (endPointMarker.current === null) {
-        endPointMarker.current = L.marker([e.latlng.lat, e.latlng.lng], {
-          icon: number2Icon,
-        }).addTo(newMap);
-        line.current = L.polyline(
-          [
-            startPointMarker.current.getLatLng(),
-            endPointMarker.current.getLatLng(),
-          ],
-          { color: tomtomDarkBlue }
+        endPointMarker.current = createMarker(lat, lng, number2Icon).addTo(
+          newMap
+        );
+        line.current = createLine(
+          startPointMarker.current.getLatLng(),
+          endPointMarker.current.getLatLng()
         ).addTo(newMap);
-        L.popup()
-          .setLatLng(e.latlng)
-          .setContent(
-            "The distance between the points is: " +
-              startPointMarker.current
-                .getLatLng()
-                .distanceTo(endPointMarker.current.getLatLng())
-                .toFixed(2) +
-              " meters"
-          )
-          .openOn(newMap);
+        createPopup(
+          e.latlng,
+          "The distance between the points is: " +
+            startPointMarker.current
+              .getLatLng()
+              .distanceTo(endPointMarker.current.getLatLng())
+              .toFixed(2) +
+            " meters"
+        ).openOn(newMap);
       } else {
-        startPointMarker.current.remove();
-        startPointMarker.current = null;
-        endPointMarker.current.remove();
-        endPointMarker.current = null;
-        line.current?.remove();
-        line.current = null;
+        cleanup(startPointMarker, endPointMarker, line);
       }
     });
 
