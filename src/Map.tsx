@@ -4,17 +4,11 @@ import "leaflet/dist/leaflet.css";
 import { log } from "./logging_utils";
 import { GeoPoint, GuidanceInstruction } from "./types";
 import {
-  tomTomBlack,
   tomtomDarkBlue,
+  tomtomGreen,
   tomtomOrange,
-  tomtomYellow,
 } from "./colors";
-import {
-  createLine,
-  createMarker,
-  createPopup,
-  cleanup,
-} from "./map_utils";
+import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
 
 export default function Map({
   routePoints,
@@ -164,8 +158,8 @@ function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
       index === 0
         ? tomtomOrange // origin
         : index === routePoints.length - 1
-        ? tomTomBlack // destination
-        : tomtomYellow; // the rest
+        ? tomtomGreen // destination
+        : tomtomDarkBlue; // the rest
     const radius = index === 0 || index === routePoints.length - 1 ? 8 : 4;
     const m = L.circleMarker([latitude, longitude], {
       radius: radius,
@@ -192,11 +186,15 @@ function createGuidanceMarkers(
   guidanceInstructions.forEach((instruction, index) => {
     const { latitude, longitude } = instruction.maneuverPoint;
     const marker = L.marker([latitude, longitude], {
-      icon: L.divIcon({
-        className: "guidance-marker",
-        iconSize: [24, 24],
-        iconAnchor: [0, 24],
-        popupAnchor: [0, -36],
+      icon: L.icon({
+        iconUrl:
+          "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
       }),
     }).bindPopup(
       `<b>${index + 1}. ${instruction.maneuver}</b><br>routeOffsetInMeters: ${
