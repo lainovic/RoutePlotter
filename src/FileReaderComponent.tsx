@@ -23,6 +23,11 @@ export default function FileReaderComponent({
   };
 
   return (
-    <input ref={fileInputRef} type="file" onChange={handleFileInputChange} />
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept=".csv, .txt, .json"
+      onChange={handleFileInputChange}
+    />
   );
 }

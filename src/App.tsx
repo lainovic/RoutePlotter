@@ -2,16 +2,17 @@ import React from "react";
 import "./App.css";
 import Map from "./Map";
 import FileReaderComponent from "./FileReaderComponent";
+import { secondsToHoursMinutesSeconds } from "./time_utils";
 import {
   extractGeoPoints,
   extractGuidanceInstructions,
   extractRoutes,
   extractRouteSummary,
-  secondsToHoursMinutesSeconds,
 } from "./route_utils";
 import { GeoPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
+import { log } from "./logging_utils";
 
 const onFailedToParse = (message: string) => alert(message);
 
@@ -31,6 +32,7 @@ function App() {
       return;
     }
     const route = routes[0];
+    log("Route loaded", route);
     const geopoints: GeoPoint[] = extractGeoPoints(route, onFailedToParse);
     setRoutePoints(geopoints);
     const guidanceInstructions: GuidanceInstruction[] =

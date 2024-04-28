@@ -3,11 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { log } from "./logging_utils";
 import { GeoPoint, GuidanceInstruction } from "./types";
-import {
-  tomtomDarkBlue,
-  tomtomGreen,
-  tomtomOrange,
-} from "./colors";
+import { tomtomDarkBlue, tomtomGreen, tomtomOrange } from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
 
 export default function Map({
@@ -87,12 +83,26 @@ export default function Map({
 
   React.useEffect(() => {
     log("Route points changed", routePoints);
+    const m = map.current;
+    if (routeVisibility) {
+      m?.removeLayer(routeMarkers.current);
+    }
     routeMarkers.current = createRouteMarkers(routePoints);
+    if (m !== null && routeVisibility) {
+      routeMarkers.current.addTo(m);
+    }
   }, [routePoints]);
 
   React.useEffect(() => {
     log("Guidance instructions changed", guidanceInstructions);
+    const m = map.current;
+    if (guidanceVisibility) {
+      m?.removeLayer(guidanceMarkers.current);
+    }
     guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
+    if (m !== null && guidanceVisibility) {
+      guidanceMarkers.current.addTo(m);
+    }
   }, [guidanceInstructions]);
 
   React.useEffect(() => {
@@ -119,13 +129,19 @@ export default function Map({
     }
   }, [guidanceVisibility]);
 
-  log("Map rendering");
+  log("Map rendering:");
+  log("Route points:", routePoints);
+  log("Guidance instructions:", guidanceInstructions);
   return (
     <>
       <div id="checkboxes">
-        <div className="checkbox-container">
+        <div
+          className="checkbox-container"
+          style={{
+            visibility: routePoints.length === 0 ? "hidden" : "visible",
+          }}
+        >
           <input
-            disabled={routePoints.length === 0}
             type="checkbox"
             id="routePoints"
             defaultChecked={true}
@@ -133,9 +149,14 @@ export default function Map({
           />
           <label htmlFor="routePoints">Route points</label>
         </div>
-        <div className="checkbox-container">
+        <div
+          className="checkbox-container"
+          style={{
+            visibility:
+              guidanceInstructions.length === 0 ? "hidden" : "visible",
+          }}
+        >
           <input
-            disabled={guidanceInstructions.length === 0}
             type="checkbox"
             id="instructions"
             defaultChecked={false}
@@ -150,9 +171,9 @@ export default function Map({
 }
 
 function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
-  log("Creating route markers", routePoints);
   const markers = L.layerGroup();
   routePoints.forEach((point: GeoPoint, index: number) => {
+    // log ("Creating route markers from:", point);
     const { latitude, longitude } = point;
     const color =
       index === 0
@@ -181,7 +202,6 @@ function centerMapAtPoint(map: L.Map, point: GeoPoint) {
 function createGuidanceMarkers(
   guidanceInstructions: GuidanceInstruction[]
 ): L.LayerGroup {
-  log("Creating guidance markers", guidanceInstructions);
   const markers = L.layerGroup();
   guidanceInstructions.forEach((instruction, index) => {
     const { latitude, longitude } = instruction.maneuverPoint;
