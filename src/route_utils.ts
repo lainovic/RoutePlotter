@@ -56,9 +56,9 @@ function parseCSV(text: string): Route[] {
               location.source_timestamp !== undefined
           )
           .map((location) => ({
-            latitude: location.lat,
-            longitude: location.lon,
-            speed: location.speed,
+            latitude: parseFloat(location.lat.toString()),
+            longitude: parseFloat(location.lon.toString()),
+            speed: parseFloat(location.speed.toString()).toFixed(2) as any as number,
           })),
       },
     ],

@@ -190,22 +190,12 @@ function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
       fillOpacity: 1,
     }).bindPopup(
       `<b>${index + 1}.</b> ${latitude}, ${longitude}${
-        point.speed != null &&
-        `<br>speed: ${limitToTwoDecimals(point.speed)} m/s`
+        point.speed != null && `<br>speed: ${point.speed} m/s`
       }`
     );
     markers.addLayer(m);
   });
   return markers;
-}
-
-function limitToTwoDecimals(str: string): string {
-  const number = parseFloat(str);
-  if (isNaN(number)) {
-    return str;
-  }
-  const roundedNumber = number.toFixed(2);
-  return roundedNumber;
 }
 
 function centerMapAtPoint(map: L.Map, point: GeoPoint) {
