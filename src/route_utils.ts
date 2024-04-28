@@ -58,6 +58,7 @@ function parseCSV(text: string): Route[] {
           .map((location) => ({
             latitude: location.lat,
             longitude: location.lon,
+            speed: location.speed,
           })),
       },
     ],

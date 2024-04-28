@@ -1,6 +1,7 @@
 export interface GeoPoint {
-  latitude: number;
-  longitude: number;
+  latitude: number | any;
+  longitude: number | any;
+  speed: number | any | null;
 }
 
 export interface Route {

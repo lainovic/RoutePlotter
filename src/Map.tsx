@@ -173,7 +173,6 @@ export default function Map({
 function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
   const markers = L.layerGroup();
   routePoints.forEach((point: GeoPoint, index: number) => {
-    // log ("Creating route markers from:", point);
     const { latitude, longitude } = point;
     const color =
       index === 0
@@ -189,10 +188,24 @@ function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
       weight: 1,
       opacity: 1,
       fillOpacity: 1,
-    }).bindPopup(`<b>${index + 1}.</b> ${latitude}, ${longitude}`);
+    }).bindPopup(
+      `<b>${index + 1}.</b> ${latitude}, ${longitude}${
+        point.speed != null &&
+        `<br>speed: ${limitToTwoDecimals(point.speed)} m/s`
+      }`
+    );
     markers.addLayer(m);
   });
   return markers;
+}
+
+function limitToTwoDecimals(str: string): string {
+  const number = parseFloat(str);
+  if (isNaN(number)) {
+    return str;
+  }
+  const roundedNumber = number.toFixed(2);
+  return roundedNumber;
 }
 
 function centerMapAtPoint(map: L.Map, point: GeoPoint) {
