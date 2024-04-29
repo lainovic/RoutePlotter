@@ -138,6 +138,24 @@ export default function Map({
     }
   }, [guidanceVisibility]);
 
+  React.useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === "c" || event.key === "C") {
+        const m = map.current;
+        if (m !== null) {
+          const latitude = window.prompt("Enter latitude:");
+          const longitude = window.prompt("Enter longitude:");
+          if (latitude && longitude)
+            m.setView([parseFloat(latitude), parseFloat(longitude)], 10);
+        }
+      }
+    };
+    document.addEventListener("keypress", handleKeyPress);
+    return () => {
+      document.removeEventListener("keypress", handleKeyPress);
+    };
+  }, []);
+
   log("Map rendering:");
   log("Route points:", routePoints);
   log("Guidance instructions:", guidanceInstructions);
@@ -199,16 +217,12 @@ function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
       fillOpacity: 1,
     }).bindPopup(
       `<b>${index + 1}.</b> ${latitude}, ${longitude}${
-        point.speed != null && `<br>speed: ${point.speed} m/s`
+        point.speed != null ? `<br>speed: ${point.speed} m/s` : ""
       }`
     );
     markers.addLayer(m);
   });
   return markers;
-}
-
-function centerMapAtPoint(map: L.Map, point: GeoPoint) {
-  map.setView([point.latitude, point.longitude], 13);
 }
 
 function createGuidanceMarkers(
@@ -229,9 +243,11 @@ function createGuidanceMarkers(
         shadowSize: [41, 41],
       }),
     }).bindPopup(
-      `<b>${index + 1}. ${instruction.maneuver}</b><br>routeOffsetInMeters: ${
+      `<b>${index + 1}. ${
+        instruction.maneuver
+      }</b><br>point: ${latitude}, ${longitude}<br>route offset: ${
         instruction.routeOffsetInMeters
-      }<br>Point: ${latitude}, ${longitude}`
+      } m`
     );
     markers.addLayer(marker);
   });

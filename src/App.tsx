@@ -70,10 +70,16 @@ function App() {
         </div>
         <div className="sidebar">
           {loaded && (
-            <p className="note">
-              Click once to add a point, then click again to display the
-              Haversine distance between them.
-            </p>
+            <>
+              <p className="note">
+                Click once to add a point, then click again to display the
+                Haversine distance between them.
+              </p>
+              <p className="note">
+                Press <span className="key">C</span> to center the map on a specific latitude and
+                longitude.
+              </p>
+            </>
           )}
           <br />
           <div className="textField">
@@ -85,7 +91,7 @@ function App() {
                 )}`}</div>
               </>
             ) : (
-              "Upload a JSON file with route data from TomTom Routing API by click on the map or on the button below."
+              "Upload a TTP or JSON file with route data from TomTom Routing API by click on the map or on the button below."
             )}
           </div>
           <FileReaderComponent
