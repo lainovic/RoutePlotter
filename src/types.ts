@@ -1,4 +1,5 @@
 export interface GeoPoint {
+  timestamp: string | any;
   latitude: number | any;
   longitude: number | any;
   speed: number | any | null;

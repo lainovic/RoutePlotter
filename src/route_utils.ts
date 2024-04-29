@@ -50,15 +50,16 @@ function parseCSV(text: string): Route[] {
   var data = Papa.parse<GnssLocation>(text, { header: true });
   log("Parsed CSV:", data.data);
   const locations = data.data as GnssLocation[];
+  const points = parseCSVPoints(locations);
   const route: Route = {
     legs: [
       {
-        points: parseCSVPoints(locations),
+        points: points,
       },
     ],
     summary: {
-      lengthInMeters: calculateDistanceInMeters(locations),
-      travelTimeInSeconds: calculateTravelTimeInSeconds(locations),
+      lengthInMeters: calculateDistanceInMeters(points),
+      travelTimeInSeconds: calculateTravelTimeInSeconds(points),
     },
     guidance: {
       instructions: [],
@@ -77,6 +78,7 @@ function parseCSVPoints(locations: GnssLocation[]): GeoPoint[] {
     )
     .map((location) => {
       const point: GeoPoint = {
+        timestamp: location.source_timestamp,
         latitude: parseFloat(location.lat.toString()),
         longitude: parseFloat(location.lon.toString()),
         speed: parseFloat(location.speed.toString()).toFixed(
@@ -100,15 +102,16 @@ function parseTTP(text: string): Route[] {
       `Unsupported TTP version: ${ttpVersion}, expected ${supportedVersion}`
     );
   }
+  const points = parseTTPPoints(lines);
   const route: Route = {
     legs: [
       {
-        points: parseTTPPoints(lines),
+        points: points,
       },
     ],
     summary: {
-      lengthInMeters: 0,
-      travelTimeInSeconds: 0,
+      lengthInMeters: calculateDistanceInMeters(points),
+      travelTimeInSeconds: calculateTravelTimeInSeconds(points),
     },
     guidance: {
       instructions: [],
@@ -140,6 +143,7 @@ function parseTTPPoints(lines: string[]): GeoPoint[] {
       return;
     }
     points.push({
+      timestamp: reception_timestamp,
       latitude: parseFloat(lat),
       longitude: parseFloat(lon),
       speed: parseFloat(speed).toFixed(2) as any as number,
@@ -149,29 +153,27 @@ function parseTTPPoints(lines: string[]): GeoPoint[] {
   return points;
 }
 
-function calculateTravelTimeInSeconds(locations: GnssLocation[]): number {
-  if (locations.length < 2) return 0;
-  let startTimestamp = parseFloat(locations[0].source_timestamp);
+function calculateTravelTimeInSeconds(points: GeoPoint[]): number {
+  if (points.length < 2) return 0;
+  let startTimestamp = parseFloat(points[0].timestamp);
   if (isNaN(startTimestamp)) {
     // try with the second timestamp
-    startTimestamp = parseFloat(locations[1].source_timestamp);
+    startTimestamp = parseFloat(points[1].timestamp);
     if (isNaN(startTimestamp)) {
       // if both are invalid, throw an error
       throw new Error(`Invalid timestamps in the first two locations:
-      ${locations[0].source_timestamp}, ${locations[1].source_timestamp}`);
+      ${points[0].timestamp}, ${points[1].timestamp}`);
     }
   }
-  let endTimestamp = parseFloat(
-    locations[locations.length - 1].source_timestamp
-  );
+  let endTimestamp = parseFloat(points[points.length - 1].timestamp);
   if (isNaN(endTimestamp)) {
     // try with the second-to-last timestamp
-    endTimestamp = parseFloat(locations[locations.length - 2].source_timestamp);
+    endTimestamp = parseFloat(points[points.length - 2].timestamp);
     if (isNaN(endTimestamp)) {
       // if both are invalid, throw an error
       throw new Error(`Invalid timestamps in the last two locations:
-      ${locations[locations.length - 1].source_timestamp},
-      ${locations[locations.length - 2].source_timestamp}`);
+      ${points[points.length - 1].timestamp},
+      ${points[points.length - 2].timestamp}`);
     }
   }
   const travelTimeInSeconds = (endTimestamp - startTimestamp).toFixed(
@@ -180,12 +182,12 @@ function calculateTravelTimeInSeconds(locations: GnssLocation[]): number {
   return travelTimeInSeconds;
 }
 
-function calculateDistanceInMeters(locations: GnssLocation[]): number {
+function calculateDistanceInMeters(points: GeoPoint[]): number {
   let distance = 0;
-  if (locations.length >= 2) {
-    for (let i = 1; i < locations.length; i++) {
-      const previous = locations[i - 1];
-      const current = locations[i];
+  if (points.length >= 2) {
+    for (let i = 1; i < points.length; i++) {
+      const previous = points[i - 1];
+      const current = points[i];
       distance += calculateDistanceBetweenPointsInMeters(previous, current);
     }
   }
@@ -199,19 +201,24 @@ function calculateDistanceInMeters(locations: GnssLocation[]): number {
  * in degrees.
  */
 function calculateDistanceBetweenPointsInMeters(
-  previous: GnssLocation,
-  current: GnssLocation
+  previous: GeoPoint,
+  current: GeoPoint
 ): number {
-  if (!previous.lat || !previous.lon || !current.lat || !current.lon) {
+  if (
+    !previous.latitude ||
+    !previous.longitude ||
+    !current.latitude ||
+    !current.longitude
+  ) {
     console.error("Invalid latitudes or longitudes");
     return 0;
   }
   const R = 6371e3; // Radius of the Earth in meters
   const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
-  const φ1 = toRadians(previous.lat);
-  const φ2 = toRadians(current.lat);
-  const Δφ = toRadians(current.lat - previous.lat);
-  const Δλ = toRadians(current.lon - previous.lon);
+  const φ1 = toRadians(previous.latitude);
+  const φ2 = toRadians(current.latitude);
+  const Δφ = toRadians(current.latitude - previous.latitude);
+  const Δλ = toRadians(current.longitude - previous.longitude);
   const a =
     Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
     Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
