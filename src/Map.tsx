@@ -36,13 +36,13 @@ export default function Map({
     var number1Icon = L.divIcon({
       className: "custom-div-icon",
       html: '<div class="number">1</div>',
-      iconSize: [30, 30],
+      iconSize: [20, 20],
     });
 
     var number2Icon = L.divIcon({
       className: "custom-div-icon",
       html: '<div class="number">2</div>',
-      iconSize: [30, 30],
+      iconSize: [20, 20],
     });
 
     newMap.on("click", (e) => {

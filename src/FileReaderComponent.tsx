@@ -26,7 +26,7 @@ export default function FileReaderComponent({
     <input
       ref={fileInputRef}
       type="file"
-      accept=".csv, .txt, .json"
+      accept=".csv, .txt, .json, .ttp"
       onChange={handleFileInputChange}
     />
   );

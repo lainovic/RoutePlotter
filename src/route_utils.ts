@@ -20,11 +20,16 @@ export function extractRoutes(
   } catch (error) {
     console.error("Error parsing as JSON:", error);
     try {
-      return parseCSV(text);
+      return parseTTP(text);
     } catch (error) {
-      console.error("Error parsing as CSV:", error);
-      onFailure("Error parsing file: " + error);
-      return [];
+      console.error("Error parsing as TTP:", error);
+      try {
+        return parseCSV(text);
+      } catch (error) {
+        console.error("Error parsing as CSV:", error);
+        onFailure("Error parsing file: " + error);
+        return [];
+      }
     }
   }
 }
@@ -48,18 +53,7 @@ function parseCSV(text: string): Route[] {
   const route: Route = {
     legs: [
       {
-        points: locations
-          .filter(
-            (location) =>
-              location.lat !== undefined &&
-              location.lon !== undefined &&
-              location.source_timestamp !== undefined
-          )
-          .map((location) => ({
-            latitude: parseFloat(location.lat.toString()),
-            longitude: parseFloat(location.lon.toString()),
-            speed: parseFloat(location.speed.toString()).toFixed(2) as any as number,
-          })),
+        points: parseCSVPoints(locations),
       },
     ],
     summary: {
@@ -73,34 +67,114 @@ function parseCSV(text: string): Route[] {
   return [route];
 }
 
+function parseCSVPoints(locations: GnssLocation[]): GeoPoint[] {
+  return locations
+    .filter(
+      (location) =>
+        location.lat !== undefined &&
+        location.lon !== undefined &&
+        location.source_timestamp !== undefined
+    )
+    .map((location) => {
+      const point: GeoPoint = {
+        latitude: parseFloat(location.lat.toString()),
+        longitude: parseFloat(location.lon.toString()),
+        speed: parseFloat(location.speed.toString()).toFixed(
+          2
+        ) as any as number,
+      };
+      return point;
+    });
+}
+
+function parseTTP(text: string): Route[] {
+  const lines = text.split("\n");
+  const header = "BEGIN:ApplicationVersion=TomTom Positioning";
+  if (!lines[0].startsWith(header)) {
+    throw new Error("Invalid TTP format");
+  }
+  const supportedVersion = "0.7";
+  const ttpVersion = lines[0].slice(header.length + 1);
+  if (ttpVersion !== supportedVersion) {
+    throw new Error(
+      `Unsupported TTP version: ${ttpVersion}, expected ${supportedVersion}`
+    );
+  }
+  const route: Route = {
+    legs: [
+      {
+        points: parseTTPPoints(lines),
+      },
+    ],
+    summary: {
+      lengthInMeters: 0,
+      travelTimeInSeconds: 0,
+    },
+    guidance: {
+      instructions: [],
+    },
+  };
+  return [route];
+}
+
+function parseTTPPoints(lines: string[]): GeoPoint[] {
+  const points: GeoPoint[] = [];
+  let seenTimestaps = new Set<string>();
+  lines.forEach((line) => {
+    if (line.startsWith("#")) {
+      return; // skip comments
+    }
+    const parts = line.split(",");
+    const reception_timestamp = parts[0];
+    if (
+      parseFloat(reception_timestamp) === 0 ||
+      seenTimestaps.has(reception_timestamp)
+    ) {
+      return;
+    }
+    const lon = parts[3];
+    const lat = parts[5];
+    const speed = parts[11];
+    if (!lon || !lat || !speed) {
+      seenTimestaps.add(reception_timestamp);
+      return;
+    }
+    points.push({
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lon),
+      speed: parseFloat(speed).toFixed(2) as any as number,
+    });
+    seenTimestaps.add(reception_timestamp);
+  });
+  return points;
+}
+
 function calculateTravelTimeInSeconds(locations: GnssLocation[]): number {
   if (locations.length < 2) return 0;
-  let firstTimestamp = parseFloat(locations[0].source_timestamp);
-  if (isNaN(firstTimestamp)) {
+  let startTimestamp = parseFloat(locations[0].source_timestamp);
+  if (isNaN(startTimestamp)) {
     // try with the second timestamp
-    firstTimestamp = parseFloat(locations[1].source_timestamp);
-    if (isNaN(firstTimestamp)) {
+    startTimestamp = parseFloat(locations[1].source_timestamp);
+    if (isNaN(startTimestamp)) {
       // if both are invalid, throw an error
       throw new Error(`Invalid timestamps in the first two locations:
       ${locations[0].source_timestamp}, ${locations[1].source_timestamp}`);
     }
   }
-  let lastTimestamp = parseFloat(
+  let endTimestamp = parseFloat(
     locations[locations.length - 1].source_timestamp
   );
-  if (isNaN(lastTimestamp)) {
+  if (isNaN(endTimestamp)) {
     // try with the second-to-last timestamp
-    lastTimestamp = parseFloat(
-      locations[locations.length - 2].source_timestamp
-    );
-    if (isNaN(lastTimestamp)) {
+    endTimestamp = parseFloat(locations[locations.length - 2].source_timestamp);
+    if (isNaN(endTimestamp)) {
       // if both are invalid, throw an error
       throw new Error(`Invalid timestamps in the last two locations:
       ${locations[locations.length - 1].source_timestamp},
       ${locations[locations.length - 2].source_timestamp}`);
     }
   }
-  const travelTimeInSeconds = (lastTimestamp - firstTimestamp).toFixed(
+  const travelTimeInSeconds = (endTimestamp - startTimestamp).toFixed(
     2
   ) as any as number;
   return travelTimeInSeconds;
