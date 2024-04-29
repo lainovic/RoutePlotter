@@ -69,6 +69,13 @@ function App() {
           )}
         </div>
         <div className="sidebar">
+          {loaded && (
+            <p className="note">
+              Click once to add a point, then click again to display the
+              Haversine distance between them.
+            </p>
+          )}
+          <br />
           <div className="textField">
             {loaded && routeSummary ? (
               <>
@@ -78,7 +85,7 @@ function App() {
                 )}`}</div>
               </>
             ) : (
-              "Upload a JSON file with route data from TomTom Routing API."
+              "Upload a JSON file with route data from TomTom Routing API by click on the map or on the button below."
             )}
           </div>
           <FileReaderComponent

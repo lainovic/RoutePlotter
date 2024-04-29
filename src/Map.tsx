@@ -86,7 +86,8 @@ export default function Map({
       m.removeLayer(routeMarkers.current);
       routeMarkers.current = createRouteMarkers(routePoints);
       routeMarkers.current.addTo(m);
-      centerMapAtPoint(m, routePoints[0]);
+      centerAroundRoute(m, routePoints);
+      // centerMapAtPoint(m, routePoints[0]);
       setRouteVisibility(true);
     }
   }, [routePoints]);
@@ -235,4 +236,18 @@ function createGuidanceMarkers(
     markers.addLayer(marker);
   });
   return markers;
+}
+
+function centerAroundRoute(m: L.Map, routePoints: GeoPoint[]) {
+  const latitudes = routePoints.map((point) => point.latitude);
+  const longitudes = routePoints.map((point) => point.longitude);
+  const minLatitude = Math.min(...latitudes);
+  const maxLatitude = Math.max(...latitudes);
+  const minLongitude = Math.min(...longitudes);
+  const maxLongitude = Math.max(...longitudes);
+  const paddingFactor = 0.1;
+  m.fitBounds([
+    [minLatitude - paddingFactor, minLongitude - paddingFactor],
+    [maxLatitude + paddingFactor, maxLongitude + paddingFactor],
+  ]);
 }
