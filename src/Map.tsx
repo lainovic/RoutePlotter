@@ -13,8 +13,8 @@ export default function Map({
   routePoints: GeoPoint[];
   guidanceInstructions: GuidanceInstruction[];
 }) {
-  const [guidanceVisibility, setGuidanceVisibility] = React.useState(false);
   const [routeVisibility, setRouteVisibility] = React.useState(true);
+  const [guidanceVisibility, setGuidanceVisibility] = React.useState(false);
   const map = React.useRef<L.Map | null>(null);
   const routeMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
   const guidanceMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
@@ -30,8 +30,6 @@ export default function Map({
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(newMap);
-
-    centerMapAtPoint(newMap, routePoints[0]);
 
     var number1Icon = L.divIcon({
       className: "custom-div-icon",
@@ -84,26 +82,14 @@ export default function Map({
   React.useEffect(() => {
     log("Route points changed", routePoints);
     const m = map.current;
-    if (routeVisibility) {
-      m?.removeLayer(routeMarkers.current);
-    }
-    routeMarkers.current = createRouteMarkers(routePoints);
-    if (m !== null && routeVisibility) {
+    if (m !== null) {
+      m.removeLayer(routeMarkers.current);
+      routeMarkers.current = createRouteMarkers(routePoints);
       routeMarkers.current.addTo(m);
+      centerMapAtPoint(m, routePoints[0]);
+      setRouteVisibility(true);
     }
   }, [routePoints]);
-
-  React.useEffect(() => {
-    log("Guidance instructions changed", guidanceInstructions);
-    const m = map.current;
-    if (guidanceVisibility) {
-      m?.removeLayer(guidanceMarkers.current);
-    }
-    guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
-    if (m !== null && guidanceVisibility) {
-      guidanceMarkers.current.addTo(m);
-    }
-  }, [guidanceInstructions]);
 
   React.useEffect(() => {
     log("Route visibility changed", routeVisibility);
@@ -116,6 +102,28 @@ export default function Map({
       }
     }
   }, [routeVisibility]);
+
+  React.useEffect(() => {
+    log("Guidance instructions changed", guidanceInstructions);
+    const m = map.current;
+    if (m !== null) {
+      m.removeLayer(guidanceMarkers.current);
+      guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
+      setGuidanceVisibility(false);
+    }
+  }, [guidanceInstructions]);
+
+  React.useEffect(() => {
+    log("Guidance instructions changed", guidanceInstructions);
+    const m = map.current;
+    if (guidanceVisibility) {
+      m?.removeLayer(guidanceMarkers.current);
+    }
+    guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
+    if (m !== null && guidanceVisibility) {
+      guidanceMarkers.current.addTo(m);
+    }
+  }, [guidanceInstructions]);
 
   React.useEffect(() => {
     log("Guidance visibility changed", guidanceVisibility);
@@ -144,7 +152,7 @@ export default function Map({
           <input
             type="checkbox"
             id="routePoints"
-            defaultChecked={true}
+            checked={routeVisibility}
             onChange={(e) => setRouteVisibility(e.target.checked)}
           />
           <label htmlFor="routePoints">Route points</label>
@@ -159,7 +167,7 @@ export default function Map({
           <input
             type="checkbox"
             id="instructions"
-            defaultChecked={false}
+            checked={guidanceVisibility}
             onChange={(e) => setGuidanceVisibility(e.target.checked)}
           />
           <label htmlFor="instructions">Guidance instructions</label>
