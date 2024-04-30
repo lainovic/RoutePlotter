@@ -79,6 +79,9 @@ function App() {
                 Press <span className="key">C</span> to center the map on a specific latitude and
                 longitude.
               </p>
+              <p className="note">
+                Right click on the map to copy the latitude and longitude of a point to the clipboard.
+              </p>
             </>
           )}
           <br />

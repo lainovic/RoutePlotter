@@ -1,5 +1,7 @@
 import React from "react";
 import L from "leaflet";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log } from "./logging_utils";
 import { GeoPoint, GuidanceInstruction } from "./types";
@@ -71,6 +73,30 @@ export default function Map({
       }
     });
 
+    newMap.on("contextmenu", async (e) => {
+      const latlng = newMap.mouseEventToLatLng(e.originalEvent);
+      const coordinates = `${latlng.lat}, ${latlng.lng}`;
+      log("Coordinates:", coordinates);
+
+      try {
+        await navigator.clipboard.writeText(coordinates);
+        toast.success("Coordinates copied to clipboard!", {
+          position: "top-center",
+          hideProgressBar: true,
+          autoClose: 500, // Duration in milliseconds
+        });
+      } catch (error) {
+        console.error("Failed to copy coordinates to clipboard:", error);
+        toast.error("Failed to copy coordinates to clipboard!", {
+          position: "top-center",
+          hideProgressBar: true,
+          autoClose: 500, // Duration in milliseconds
+        });
+      }
+
+      log("end of contextmenu");
+    });
+
     map.current = newMap;
 
     return () => {
@@ -87,7 +113,6 @@ export default function Map({
       routeMarkers.current = createRouteMarkers(routePoints);
       routeMarkers.current.addTo(m);
       centerAroundRoute(m, routePoints);
-      // centerMapAtPoint(m, routePoints[0]);
       setRouteVisibility(true);
     }
   }, [routePoints]);
@@ -193,6 +218,7 @@ export default function Map({
         </div>
       </div>
       <div id="map" style={{ height: "600px" }}></div>
+      <ToastContainer />
     </>
   );
 }
