@@ -13,7 +13,7 @@ import { GeoPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
 import { log } from "./logging_utils";
-import { tomtomDarkBlue, tomtomGreen, tomTomRed } from "./colors";
+import { tomtomDarkBlue, tomTomRed } from "./colors";
 import Note from "./Note";
 
 function App() {
@@ -74,7 +74,7 @@ function App() {
             <div className="sidebar">
               <div
                 className="highlighted-field"
-                style={{ borderLeftColor: tomtomGreen }}
+                style={{ borderLeftColor: tomtomDarkBlue }}
               >
                 <div className="note-container">
                   <Note />
