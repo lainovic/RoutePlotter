@@ -5,7 +5,7 @@ import {
   GuidanceInstruction,
   GnssLocation,
 } from "./types";
-import { log } from "./logging_utils";
+import { log, error as logError } from "./logging_utils";
 import Papa from "papaparse";
 
 export const supportedVersion = "0.0.12";
@@ -18,15 +18,15 @@ export function extractRoutes(
   try {
     return parseJSON(text);
   } catch (error) {
-    console.error("Error parsing as JSON:", error);
+    logError("Error parsing as JSON:", error);
     try {
       return parseTTP(text);
     } catch (error) {
-      console.error("Error parsing as TTP:", error);
+      logError("Error parsing as TTP:", error);
       try {
         return parseCSV(text);
       } catch (error) {
-        console.error("Error parsing as CSV:", error);
+        logError("Error parsing as CSV:", error);
         onFailure("Error parsing file: " + error);
         return [];
       }
@@ -210,7 +210,7 @@ function calculateDistanceBetweenPointsInMeters(
     !current.latitude ||
     !current.longitude
   ) {
-    console.error("Invalid latitudes or longitudes");
+    logError("Invalid latitudes or longitudes");
     return 0;
   }
   const R = 6371e3; // Radius of the Earth in meters
@@ -252,7 +252,7 @@ export function extractGeoPoints(
         }
       }
     });
-    if (geoPoints.length === 0) onFailure("No geo points found in JSON");
+    logError("No geo points found.");
     return geoPoints;
   } catch (error) {
     onFailure("Error extracting geo points: " + error);

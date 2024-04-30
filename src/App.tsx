@@ -40,7 +40,7 @@ function App() {
     setGuidanceInstructions(guidanceInstructions);
     const summary: Summary = extractRouteSummary(route);
     setRouteSummary(summary);
-    setLoaded(true);
+    setLoaded(geopoints.length > 0);
   }, [fileContent]);
 
   const fileInputRef = React.useRef<any>(null);
@@ -76,11 +76,12 @@ function App() {
                 Haversine distance between them.
               </p>
               <p className="note">
-                Press <span className="key">C</span> to center the map on a specific latitude and
-                longitude.
+                Press <span className="key">C</span> to center the map on a
+                specific latitude and longitude.
               </p>
               <p className="note">
-                Right click on the map to copy the latitude and longitude of a point to the clipboard.
+                Right click on the map to copy the latitude and longitude of a
+                point to the clipboard.
               </p>
             </>
           )}

@@ -3,10 +3,12 @@ import L from "leaflet";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
-import { log } from "./logging_utils";
+import { log, error as logError } from "./logging_utils";
 import { GeoPoint, GuidanceInstruction } from "./types";
 import { tomtomDarkBlue, tomtomGreen, tomtomOrange } from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
+
+
 
 export default function Map({
   routePoints,
@@ -86,7 +88,7 @@ export default function Map({
           autoClose: 500, // Duration in milliseconds
         });
       } catch (error) {
-        console.error("Failed to copy coordinates to clipboard:", error);
+        logError("Failed to copy coordinates to clipboard:", error);
         toast.error("Failed to copy coordinates to clipboard!", {
           position: "top-center",
           hideProgressBar: true,
