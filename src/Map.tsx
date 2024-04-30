@@ -190,7 +190,7 @@ export default function Map({
     return () => {
       document.removeEventListener("keypress", handleKeyPress);
     };
-  }, []);
+  }, [routePoints]);
 
   log("Map rendering:");
   log("Route points:", routePoints);
