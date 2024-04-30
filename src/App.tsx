@@ -13,7 +13,10 @@ import { GeoPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
 import { log } from "./logging_utils";
-import { tomtomDarkBlue, tomTomRed } from "./colors";
+import {
+  tomtomDarkBlue,
+  tomTomRed,
+} from "./colors";
 import Note from "./Note";
 
 function App() {
@@ -81,7 +84,8 @@ function App() {
                   <p className="note">
                     Click once to add a point, then click again to display the
                     Haversine distance between them.
-                    <br /><br />
+                    <br />
+                    <br />
                     Press <span className="key">C</span> to center the map on a
                     specific latitude and longitude.
                     <br />
@@ -93,22 +97,40 @@ function App() {
                     <br />
                     Press <span className="key">G</span> to toggle the
                     visibility of guidance instructions.
-                    <br /><br />
+                    <br />
+                    <br />
                     Right click on the map to copy the latitude and longitude of
                     a point to the clipboard.
-                    <br /><br />
+                    <br />
+                    <br />
                     Refresh the page or click the button below to upload a new
                     file and plot a new route.
                   </p>
                 </div>
                 <br />
-                <p>Size: {routePoints.length} points</p>
+                <p>
+                  Size:{" "}
+                  <span style={{ color: tomtomDarkBlue }}>
+                    {routePoints.length} points
+                  </span>
+                </p>
                 {routeSummary && (
                   <>
-                    <div>{`Length: ${routeSummary.lengthInMeters} meters`}</div>
-                    <div>{`Travel time: ${secondsToHoursMinutesSeconds(
-                      routeSummary.travelTimeInSeconds || 0
-                    )}`}</div>
+                    <div>
+                      {`Length: `}
+                      <span style={{ color: tomtomDarkBlue }}>
+                        {routeSummary.lengthInMeters}
+                        {` meters`}
+                      </span>
+                    </div>
+                    <div>
+                      {`Travel time: `}
+                      <span style={{ color: tomtomDarkBlue }}>
+                        {secondsToHoursMinutesSeconds(
+                          routeSummary.travelTimeInSeconds || 0
+                        )}
+                      </span>
+                    </div>
                   </>
                 )}
               </div>
