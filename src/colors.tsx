@@ -8,3 +8,4 @@ export const tomtomYellow = "#fdc530"; // Blue color used by TomTom
 export const tomtomOrange = "#ff5d00"; // Blue color used by TomTom
 export const tomtomBlue = "#00aaff"; // Blue color used by TomTom
 export const tomtomDarkBlue = "#004b7f"; // Blue color used by TomTom
+export const tomtomDarkGray = "#333333"; // Blue color used by TomTom

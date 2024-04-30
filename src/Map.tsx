@@ -8,8 +8,6 @@ import { GeoPoint, GuidanceInstruction } from "./types";
 import { tomtomDarkBlue, tomtomGreen, tomtomOrange } from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
 
-
-
 export default function Map({
   routePoints,
   guidanceInstructions,
@@ -171,10 +169,21 @@ export default function Map({
         const m = map.current;
         if (m !== null) {
           const latitude = window.prompt("Enter latitude:");
+          if (latitude === null) return;
           const longitude = window.prompt("Enter longitude:");
+          if (longitude === null) return;
           if (latitude && longitude)
             m.setView([parseFloat(latitude), parseFloat(longitude)], 10);
         }
+      } else if (event.key === "x" || event.key === "X") {
+        const m = map.current;
+        if (m !== null) {
+          centerAroundRoute(m, routePoints);
+        }
+      } else if (event.key === "r" || event.key === "R") {
+        setRouteVisibility((prev) => !prev);
+      } else if (event.key === "g" || event.key === "G") {
+        setGuidanceVisibility((prev) => !prev);
       }
     };
     document.addEventListener("keypress", handleKeyPress);

@@ -252,7 +252,6 @@ export function extractGeoPoints(
         }
       }
     });
-    logError("No geo points found.");
     return geoPoints;
   } catch (error) {
     onFailure("Error extracting geo points: " + error);
