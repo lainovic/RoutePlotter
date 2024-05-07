@@ -6,12 +6,12 @@ import Map from "./Map";
 import FileReaderComponent from "./FileReaderComponent";
 import { secondsToHoursMinutesSeconds } from "./time_utils";
 import {
-  extractGeoPoints,
+  extractPoints,
   extractGuidanceInstructions,
   extractRoutes,
   extractRouteSummary,
 } from "./route_utils";
-import { GeoPoint, GuidanceInstruction, Route, Summary } from "./types";
+import { NavigationPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
 import { log } from "./logging_utils";
@@ -20,7 +20,7 @@ import Note from "./Note";
 
 function App() {
   const [fileContent, setFileContent] = React.useState<string>("");
-  const [routePoints, setRoutePoints] = React.useState<GeoPoint[]>([]);
+  const [routePoints, setRoutePoints] = React.useState<NavigationPoint[]>([]);
   const [guidanceInstructions, setGuidanceInstructions] = React.useState<
     GuidanceInstruction[]
   >([]);
@@ -50,13 +50,13 @@ function App() {
     }
     const route = routes[0];
     log("Route loaded", route);
-    const geopoints: GeoPoint[] = extractGeoPoints(route, onFailedToParse);
-    if (geopoints.length === 0) {
-      setFailMessage("No geo-points found.");
+    const points: NavigationPoint[] = extractPoints(route, onFailedToParse);
+    if (points.length === 0) {
+      setFailMessage("No valid points found.");
       return;
     }
-    log("Geo-points extracted", geopoints);
-    setRoutePoints(geopoints);
+    log("Geo-points extracted", points);
+    setRoutePoints(points);
     setGuidanceInstructions(extractGuidanceInstructions(route));
     setRouteSummary(extractRouteSummary(route));
     setFailMessage("");
@@ -185,7 +185,7 @@ function App() {
                   To get started, upload a TTP or JSON file containing route
                   data response from the TomTom Routing API. You can click on
                   the map or the button below to upload, or simply paste the
-                  file content directly.
+                  content directly.
                 </div>
               )}
               <FileReaderComponent

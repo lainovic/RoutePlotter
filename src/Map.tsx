@@ -4,7 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, error as logError } from "./logging_utils";
-import { GeoPoint, GuidanceInstruction } from "./types";
+import { NavigationPoint, GuidanceInstruction } from "./types";
 import { tomtomDarkBlue, tomtomGreen, tomtomOrange } from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
 
@@ -12,7 +12,7 @@ export default function Map({
   routePoints,
   guidanceInstructions,
 }: {
-  routePoints: GeoPoint[];
+  routePoints: NavigationPoint[];
   guidanceInstructions: GuidanceInstruction[];
 }) {
   const [routeVisibility, setRouteVisibility] = React.useState(true);
@@ -234,9 +234,9 @@ export default function Map({
   );
 }
 
-function createRouteMarkers(routePoints: GeoPoint[]): L.LayerGroup {
+function createRouteMarkers(routePoints: NavigationPoint[]): L.LayerGroup {
   const markers = L.layerGroup();
-  routePoints.forEach((point: GeoPoint, index: number) => {
+  routePoints.forEach((point: NavigationPoint, index: number) => {
     const { latitude, longitude } = point;
     const color =
       index === 0
@@ -291,7 +291,7 @@ function createGuidanceMarkers(
   return markers;
 }
 
-function centerAroundRoute(m: L.Map, routePoints: GeoPoint[]) {
+function centerAroundRoute(m: L.Map, routePoints: NavigationPoint[]) {
   if (routePoints.length === 0) return;
   const latitudes = routePoints.map((point) => point.latitude);
   const longitudes = routePoints.map((point) => point.longitude);

@@ -1,4 +1,4 @@
-export interface GeoPoint {
+export interface NavigationPoint {
   timestamp: string | any;
   latitude: number | any;
   longitude: number | any;
@@ -7,7 +7,7 @@ export interface GeoPoint {
 
 export interface Route {
   legs: {
-    points: GeoPoint[];
+    points: NavigationPoint[];
   }[];
   summary: Summary;
   guidance: {
@@ -23,14 +23,14 @@ export interface Summary {
 export interface GuidanceInstruction {
   drivingSide: string;
   maneuver: string;
-  maneuverPoint: GeoPoint;
+  maneuverPoint: NavigationPoint;
   routeOffsetInMeters: number;
   routePath: RoutePath[];
 }
 
 export interface RoutePath {
   distanceInMeters: number;
-  point: GeoPoint;
+  point: NavigationPoint;
   travelTimeInSeconds: number;
 }
 

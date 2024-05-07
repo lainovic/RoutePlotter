@@ -1,5 +1,5 @@
 import {
-  GeoPoint,
+  NavigationPoint,
   Route,
   Summary,
   GuidanceInstruction,
@@ -68,7 +68,7 @@ function parseCSV(text: string): Route[] {
   return [route];
 }
 
-function parseCSVPoints(locations: GnssLocation[]): GeoPoint[] {
+function parseCSVPoints(locations: GnssLocation[]): NavigationPoint[] {
   return locations
     .filter(
       (location) =>
@@ -77,7 +77,7 @@ function parseCSVPoints(locations: GnssLocation[]): GeoPoint[] {
         location.source_timestamp !== undefined
     )
     .map((location) => {
-      const point: GeoPoint = {
+      const point: NavigationPoint = {
         timestamp: location.source_timestamp,
         latitude: parseFloat(location.lat.toString()),
         longitude: parseFloat(location.lon.toString()),
@@ -120,8 +120,8 @@ function parseTTP(text: string): Route[] {
   return [route];
 }
 
-function parseTTPPoints(lines: string[]): GeoPoint[] {
-  const points: GeoPoint[] = [];
+function parseTTPPoints(lines: string[]): NavigationPoint[] {
+  const points: NavigationPoint[] = [];
   let seenTimestaps = new Set<string>();
   lines.forEach((line) => {
     if (line.startsWith("#")) {
@@ -153,7 +153,7 @@ function parseTTPPoints(lines: string[]): GeoPoint[] {
   return points;
 }
 
-function calculateTravelTimeInSeconds(points: GeoPoint[]): number {
+function calculateTravelTimeInSeconds(points: NavigationPoint[]): number {
   if (points.length < 2) return 0;
   let startTimestamp = parseFloat(points[0].timestamp);
   if (isNaN(startTimestamp)) {
@@ -182,7 +182,7 @@ function calculateTravelTimeInSeconds(points: GeoPoint[]): number {
   return travelTimeInSeconds;
 }
 
-function calculateDistanceInMeters(points: GeoPoint[]): number {
+function calculateDistanceInMeters(points: NavigationPoint[]): number {
   let distance = 0;
   if (points.length >= 2) {
     for (let i = 1; i < points.length; i++) {
@@ -201,8 +201,8 @@ function calculateDistanceInMeters(points: GeoPoint[]): number {
  * in degrees.
  */
 function calculateDistanceBetweenPointsInMeters(
-  previous: GeoPoint,
-  current: GeoPoint
+  previous: NavigationPoint,
+  current: NavigationPoint
 ): number {
   if (
     !previous.latitude ||
@@ -236,23 +236,23 @@ export function extractRouteSummary(route: Route): Summary {
   return route.summary;
 }
 
-export function extractGeoPoints(
+export function extractPoints(
   route: Route,
   onFailure: (message: string) => void
-): GeoPoint[] {
+): NavigationPoint[] {
   try {
-    const geoPoints: GeoPoint[] = [];
+    const points: NavigationPoint[] = [];
     route.legs.forEach((leg, index) => {
       if (leg && leg.points && Array.isArray(leg.points)) {
         if (index > 0) {
-          geoPoints.push(...leg.points.slice(1)); // skip the first point,
+          points.push(...leg.points.slice(1)); // skip the first point,
           // as it's a duplicate of the last point of the previous leg
         } else {
-          geoPoints.push(...leg.points);
+          points.push(...leg.points);
         }
       }
     });
-    return geoPoints;
+    return points;
   } catch (error) {
     onFailure("Error extracting geo points: " + error);
     return [];
