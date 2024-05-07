@@ -299,7 +299,7 @@ function centerAroundRoute(m: L.Map, routePoints: NavigationPoint[]) {
   const maxLatitude = Math.max(...latitudes);
   const minLongitude = Math.min(...longitudes);
   const maxLongitude = Math.max(...longitudes);
-  const paddingFactor = 0.1;
+  const paddingFactor = 0;
   m.fitBounds([
     [minLatitude - paddingFactor, minLongitude - paddingFactor],
     [maxLatitude + paddingFactor, maxLongitude + paddingFactor],
