@@ -229,7 +229,7 @@ function calculateDistanceBetweenPointsInMeters(
 export function extractGuidanceInstructions(
   route: Route
 ): GuidanceInstruction[] {
-  return route.guidance.instructions;
+  return route.guidance?.instructions || [];
 }
 
 export function extractRouteSummary(route: Route): Summary {
