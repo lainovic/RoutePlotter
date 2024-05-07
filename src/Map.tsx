@@ -193,8 +193,8 @@ export default function Map({
   }, [routePoints]);
 
   log("Map rendering:");
-  log("Route points:", routePoints);
-  log("Guidance instructions:", guidanceInstructions);
+  log("- Route points:", routePoints);
+  log("- Guidance instructions:", guidanceInstructions);
   return (
     <>
       <div id="checkboxes">
@@ -292,6 +292,7 @@ function createGuidanceMarkers(
 }
 
 function centerAroundRoute(m: L.Map, routePoints: GeoPoint[]) {
+  if (routePoints.length === 0) return;
   const latitudes = routePoints.map((point) => point.latitude);
   const longitudes = routePoints.map((point) => point.longitude);
   const minLatitude = Math.min(...latitudes);

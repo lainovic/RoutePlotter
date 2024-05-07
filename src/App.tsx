@@ -1,5 +1,7 @@
 import React from "react";
 import "./App.css";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Map from "./Map";
 import FileReaderComponent from "./FileReaderComponent";
 import { secondsToHoursMinutesSeconds } from "./time_utils";
@@ -13,10 +15,7 @@ import { GeoPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
 import { log } from "./logging_utils";
-import {
-  tomtomDarkBlue,
-  tomTomRed,
-} from "./colors";
+import { tomtomDarkBlue, tomTomRed } from "./colors";
 import Note from "./Note";
 
 function App() {
@@ -27,6 +26,7 @@ function App() {
   >([]);
   const [routeSummary, setRouteSummary] = React.useState<Summary | null>(null);
   const [failMessage, setFailMessage] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<any>(null);
 
   const onFailedToParse = (message: string) => {
     setFailMessage(message);
@@ -34,6 +34,11 @@ function App() {
 
   const isFailMessageCleared = () => {
     return failMessage !== null && failMessage == "";
+  };
+
+  const handlePaste = (event: React.ClipboardEvent) => {
+    const pastedText = event.clipboardData.getData("text");
+    setFileContent(pastedText);
   };
 
   React.useEffect(() => {
@@ -47,7 +52,7 @@ function App() {
     log("Route loaded", route);
     const geopoints: GeoPoint[] = extractGeoPoints(route, onFailedToParse);
     if (geopoints.length === 0) {
-      setFailMessage("No geo-points found in route.");
+      setFailMessage("No geo-points found.");
       return;
     }
     log("Geo-points extracted", geopoints);
@@ -57,10 +62,16 @@ function App() {
     setFailMessage("");
   }, [fileContent]);
 
-  const fileInputRef = React.useRef<any>(null);
+  React.useEffect(() => {
+    toast.error(failMessage, {
+      position: "top-center",
+      hideProgressBar: true,
+      autoClose: 500, // Duration in milliseconds
+    });
+  }, [failMessage]);
 
   return (
-    <div className="App">
+    <div className="App" onPaste={handlePaste}>
       <header className="App-header">
         <img id="header-logo" src={tomtomLogo} alt="TomTom Logo" />
         Route Plotter
@@ -82,6 +93,13 @@ function App() {
                 <div className="note-container">
                   <Note />
                   <p className="note">
+                    <div className="legend">
+                      <span className="orange circle"></span> departure
+                    </div>
+                    <div className="legend">
+                      <span className="green circle"></span> arrival
+                    </div>
+                    <br />
                     Click once to add a point, then click again to display the
                     Haversine distance between them.
                     <br />
@@ -157,16 +175,17 @@ function App() {
                   className="highlighted-field"
                   style={{ borderLeftColor: tomTomRed }}
                 >
-                  {failMessage}
+                  Error: {failMessage}
                 </div>
               ) : (
                 <div
                   className="highlighted-field"
                   style={{ borderLeftColor: tomtomDarkBlue }}
                 >
-                  To get started, upload a TTP or JSON file with route data from
-                  TomTom Routing API by clicking on the map or on the button
-                  below
+                  To get started, upload a TTP or JSON file containing route
+                  data response from the TomTom Routing API. You can click on
+                  the map or the button below to upload, or simply paste the
+                  file content directly.
                 </div>
               )}
               <FileReaderComponent
@@ -174,6 +193,7 @@ function App() {
                 onFileLoaded={setFileContent}
               />
             </div>
+            <ToastContainer />
           </>
         )}
       </main>

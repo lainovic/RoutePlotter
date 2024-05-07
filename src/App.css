@@ -112,7 +112,9 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:checked {
-  background-color: var(--tomtom-dark-blue-color); /* Background color when checked */
+  background-color: var(
+    --tomtom-dark-blue-color
+  ); /* Background color when checked */
 }
 
 .checkbox-container {
@@ -184,4 +186,29 @@ input[type="file"]::file-selector-button:hover {
 
 .note-icon {
   margin-left: -8px;
+}
+
+.circle {
+  display: inline-block;
+  background-color: #000000;
+  border-radius: 50%;
+  border: none;
+  width: 10px;
+  height: 10px;
+}
+
+.orange {
+  background-color: var(--tomtom-orange-color);
+}
+
+.green {
+  background-color: var(--tomtom-green-color);
+}
+
+.legend {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: center;
+  font-size: inherit;
 }
