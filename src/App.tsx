@@ -63,6 +63,7 @@ function App() {
   }, [fileContent]);
 
   React.useEffect(() => {
+    if (failMessage === "") return;
     toast.error(failMessage, {
       position: "top-center",
       hideProgressBar: true,
