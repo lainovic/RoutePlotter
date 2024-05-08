@@ -40,8 +40,9 @@ header {
   color: var(--tomtom-red-color);
   font-size: 1rem;
   align-self: flex-start;
-  border-bottom: 1px solid var(--tomtom-gray-color);
+  border-left: 1px solid var(--tomtom-red-color);
   box-shadow: 0px 15px 10px -15px var(--tomtom-gray-color);
+  padding-left: 5px;
 }
 
 main {
