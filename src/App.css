@@ -34,12 +34,14 @@
 header {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   font-weight: 700;
   color: var(--tomtom-red-color);
   font-size: 1rem;
   align-self: flex-start;
+  border-bottom: 1px solid var(--tomtom-gray-color);
+  box-shadow: 0px 15px 10px -15px var(--tomtom-gray-color);
 }
 
 main {
@@ -81,7 +83,7 @@ main {
 }
 
 #header-logo {
-  height: 100px;
+  height: 40px;
 }
 
 #map {

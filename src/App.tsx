@@ -73,7 +73,7 @@ function App() {
 
   return (
     <div className="App" onPaste={handlePaste}>
-      <header className="App-header">
+      <header>
         <img id="header-logo" src={tomtomLogo} alt="TomTom Logo" />
         Route Plotter
       </header>
