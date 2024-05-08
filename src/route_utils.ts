@@ -226,6 +226,19 @@ function calculateDistanceBetweenPointsInMeters(
   return R * c;
 }
 
+export function extractWaypoints(route: Route): NavigationPoint[] {
+  const waypoints: NavigationPoint[] = [];
+  route.legs.forEach((leg, index) => {
+    if (leg && leg.points && Array.isArray(leg.points)) {
+      waypoints.push(leg.points[0]);
+      if (index === route.legs.length - 1) {
+        waypoints.push(leg.points[leg.points.length - 1]); // arrival point
+      }
+    }
+  });
+  return waypoints;
+}
+
 export function extractGuidanceInstructions(
   route: Route
 ): GuidanceInstruction[] {

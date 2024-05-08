@@ -10,6 +10,7 @@ import {
   extractGuidanceInstructions,
   extractRoutes,
   extractRouteSummary,
+  extractWaypoints,
 } from "./route_utils";
 import { NavigationPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
@@ -24,6 +25,7 @@ function App() {
   const [guidanceInstructions, setGuidanceInstructions] = React.useState<
     GuidanceInstruction[]
   >([]);
+  const [waypoints, setWaypoints] = React.useState<NavigationPoint[]>([]);
   const [routeSummary, setRouteSummary] = React.useState<Summary | null>(null);
   const [failMessage, setFailMessage] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<any>(null);
@@ -58,6 +60,7 @@ function App() {
     log("Geo-points extracted", points);
     setRoutePoints(points);
     setGuidanceInstructions(extractGuidanceInstructions(route));
+    setWaypoints(extractWaypoints(route));
     setRouteSummary(extractRouteSummary(route));
     setFailMessage("");
   }, [fileContent]);
@@ -84,6 +87,7 @@ function App() {
               <Map
                 routePoints={routePoints}
                 guidanceInstructions={guidanceInstructions}
+                waypoints={waypoints}
               />
             </div>
             <div className="sidebar">
@@ -93,12 +97,15 @@ function App() {
               >
                 <div className="note-container">
                   <Note />
-                  <p className="note">
+                  <div className="note">
                     <div className="legend">
                       <span className="orange circle"></span> departure
                     </div>
                     <div className="legend">
                       <span className="green circle"></span> arrival
+                    </div>
+                    <div className="legend">
+                      <span className="yellow circle"></span> waypoint
                     </div>
                     <br />
                     Click once to add a point, then click again to display the
@@ -124,15 +131,15 @@ function App() {
                     <br />
                     Refresh the page or click the button below to upload a new
                     file and plot a new route.
-                  </p>
+                  </div>
                 </div>
                 <br />
-                <p>
+                <div>
                   Size:{" "}
                   <span style={{ color: tomtomDarkBlue }}>
                     {routePoints.length} points
                   </span>
-                </p>
+                </div>
                 {routeSummary && (
                   <>
                     <div>

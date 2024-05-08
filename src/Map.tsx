@@ -5,24 +5,28 @@ import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, error as logError } from "./logging_utils";
 import { NavigationPoint, GuidanceInstruction } from "./types";
-import { tomtomDarkBlue, tomtomGreen, tomtomOrange } from "./colors";
+import { tomtomDarkBlue, tomtomGreen, tomtomOrange, tomtomYellow } from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
 
 export default function Map({
   routePoints,
   guidanceInstructions,
+  waypoints,
 }: {
   routePoints: NavigationPoint[];
   guidanceInstructions: GuidanceInstruction[];
+  waypoints: NavigationPoint[];
 }) {
+  const map = React.useRef<L.Map | null>(null);
   const [routeVisibility, setRouteVisibility] = React.useState(true);
   const [guidanceVisibility, setGuidanceVisibility] = React.useState(false);
-  const map = React.useRef<L.Map | null>(null);
+  const [waypointVisibility, setWaypointVisibility] = React.useState(false);
   const routeMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
   const guidanceMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
-  const startPointMarker = React.useRef<L.Marker | null>(null);
-  const endPointMarker = React.useRef<L.Marker | null>(null);
-  const line = React.useRef<L.Polyline | null>(null);
+  const waypointMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
+  const rulerStartMarker = React.useRef<L.Marker | null>(null);
+  const rulerEndMarker = React.useRef<L.Marker | null>(null);
+  const rulerLine = React.useRef<L.Polyline | null>(null);
 
   React.useLayoutEffect(() => {
     log("Creating map");
@@ -47,29 +51,29 @@ export default function Map({
 
     newMap.on("click", (e) => {
       const { lat, lng } = e.latlng;
-      if (startPointMarker.current === null) {
-        startPointMarker.current = createMarker(lat, lng, number1Icon).addTo(
+      if (rulerStartMarker.current === null) {
+        rulerStartMarker.current = createMarker(lat, lng, number1Icon).addTo(
           newMap
         );
-      } else if (endPointMarker.current === null) {
-        endPointMarker.current = createMarker(lat, lng, number2Icon).addTo(
+      } else if (rulerEndMarker.current === null) {
+        rulerEndMarker.current = createMarker(lat, lng, number2Icon).addTo(
           newMap
         );
-        line.current = createLine(
-          startPointMarker.current.getLatLng(),
-          endPointMarker.current.getLatLng()
+        rulerLine.current = createLine(
+          rulerStartMarker.current.getLatLng(),
+          rulerEndMarker.current.getLatLng()
         ).addTo(newMap);
         createPopup(
           e.latlng,
           "The distance between the points is: " +
-            startPointMarker.current
+            rulerStartMarker.current
               .getLatLng()
-              .distanceTo(endPointMarker.current.getLatLng())
+              .distanceTo(rulerEndMarker.current.getLatLng())
               .toFixed(2) +
             " meters"
         ).openOn(newMap);
       } else {
-        cleanup(startPointMarker, endPointMarker, line);
+        cleanup(rulerStartMarker, rulerEndMarker, rulerLine);
       }
     });
 
@@ -135,19 +139,8 @@ export default function Map({
     if (m !== null) {
       m.removeLayer(guidanceMarkers.current);
       guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
-      setGuidanceVisibility(false);
-    }
-  }, [guidanceInstructions]);
-
-  React.useEffect(() => {
-    log("Guidance instructions changed", guidanceInstructions);
-    const m = map.current;
-    if (guidanceVisibility) {
-      m?.removeLayer(guidanceMarkers.current);
-    }
-    guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
-    if (m !== null && guidanceVisibility) {
       guidanceMarkers.current.addTo(m);
+      setGuidanceVisibility(false);
     }
   }, [guidanceInstructions]);
 
@@ -162,6 +155,29 @@ export default function Map({
       }
     }
   }, [guidanceVisibility]);
+
+  React.useEffect(() => {
+    log("Waypoints changed", guidanceInstructions);
+    const m = map.current;
+    if (m !== null) {
+      m.removeLayer(waypointMarkers.current);
+      waypointMarkers.current = createWaypointMarkers(waypoints);
+      waypointMarkers.current.addTo(m);
+      setWaypointVisibility(false);
+    }
+  }, [guidanceInstructions]);
+
+  React.useEffect(() => {
+    log("Waypoint visibility changed", guidanceVisibility);
+    const m = map.current;
+    if (m !== null) {
+      if (waypointVisibility) {
+        waypointMarkers.current.addTo(m);
+      } else {
+        m.removeLayer(waypointMarkers.current);
+      }
+    }
+  }, [waypointVisibility]);
 
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -184,6 +200,8 @@ export default function Map({
         setRouteVisibility((prev) => !prev);
       } else if (event.key === "g" || event.key === "G") {
         setGuidanceVisibility((prev) => !prev);
+      } else if (event.key === "w" || event.key === "W") {
+        setWaypointVisibility((prev) => !prev);
       }
     };
     document.addEventListener("keypress", handleKeyPress);
@@ -195,6 +213,7 @@ export default function Map({
   log("Map rendering:");
   log("- Route points:", routePoints);
   log("- Guidance instructions:", guidanceInstructions);
+  log("- Waypoints:", waypoints);
   return (
     <>
       <div id="checkboxes">
@@ -227,6 +246,20 @@ export default function Map({
           />
           <label htmlFor="instructions">Guidance instructions</label>
         </div>
+        <div
+          className="checkbox-container"
+          style={{
+            visibility: waypoints.length === 0 ? "hidden" : "visible",
+          }}
+        >
+          <input
+            type="checkbox"
+            id="instructions"
+            checked={waypointVisibility}
+            onChange={(e) => setWaypointVisibility(e.target.checked)}
+          />
+          <label htmlFor="instructions">Waypoints</label>
+        </div>
       </div>
       <div id="map" style={{ height: "600px" }}></div>
       <ToastContainer />
@@ -238,18 +271,41 @@ function createRouteMarkers(routePoints: NavigationPoint[]): L.LayerGroup {
   const markers = L.layerGroup();
   routePoints.forEach((point: NavigationPoint, index: number) => {
     const { latitude, longitude } = point;
-    const color =
-      index === 0
-        ? tomtomOrange // origin
-        : index === routePoints.length - 1
-        ? tomtomGreen // destination
-        : tomtomDarkBlue; // the rest
+    const color = tomtomDarkBlue;
     const radius = index === 0 || index === routePoints.length - 1 ? 8 : 4;
     const m = L.circleMarker([latitude, longitude], {
       radius: radius,
       fillColor: color,
       color: tomtomDarkBlue,
       weight: 1,
+      opacity: 1,
+      fillOpacity: 1,
+    }).bindPopup(
+      `<b>${index + 1}.</b> ${latitude}, ${longitude}${
+        point.speed != null ? `<br>speed: ${point.speed} m/s` : ""
+      }`
+    );
+    markers.addLayer(m);
+  });
+  return markers;
+}
+
+function createWaypointMarkers(waypoints: NavigationPoint[]): L.LayerGroup {
+  const markers = L.layerGroup();
+  waypoints.forEach((point: NavigationPoint, index: number) => {
+    const color =
+      index === 0
+        ? tomtomOrange // origin
+        : index === waypoints.length - 1
+        ? tomtomGreen // destination
+        : tomtomYellow; // the rest
+    const radius = 8;
+    const { latitude, longitude } = point;
+    const m = L.circleMarker([latitude, longitude], {
+      radius: radius,
+      fillColor: color,
+      color: tomtomDarkBlue,
+      weight: 2,
       opacity: 1,
       fillOpacity: 1,
     }).bindPopup(
