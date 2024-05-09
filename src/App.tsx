@@ -16,8 +16,7 @@ import { NavigationPoint, GuidanceInstruction, Route, Summary } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
 import { log } from "./logging_utils";
-import { tomtomDarkBlue, tomTomRed } from "./colors";
-import Note from "./Note";
+import { tomtomDarkBlue, tomtomDarkGray, tomTomRed } from "./colors";
 
 function App() {
   const [fileContent, setFileContent] = React.useState<string>("");
@@ -95,74 +94,84 @@ function App() {
                 className="highlighted-field"
                 style={{ borderLeftColor: tomtomDarkBlue }}
               >
-                <div className="note-container">
-                  <Note />
-                  <div className="note">
-                    <div className="legend">
-                      <span className="orange circle"></span> departure
-                    </div>
-                    <div className="legend">
-                      <span className="green circle"></span> arrival
-                    </div>
-                    <div className="legend">
-                      <span className="yellow circle"></span> waypoint
-                    </div>
-                    <br />
-                    Click once to add a point, then click again to display the
-                    Haversine distance between them.
-                    <br />
-                    <br />
-                    Press <span className="key">C</span> to center the map on a
-                    specific latitude and longitude.
-                    <br />
-                    Press <span className="key">X</span> to center the map
-                    around the route again.
-                    <br />
-                    Press <span className="key">R</span> to toggle the
-                    visibility of the route.
-                    <br />
-                    Press <span className="key">G</span> to toggle the
-                    visibility of guidance instructions.
-                    <br />
-                    Press <span className="key">W</span> to toggle the
-                    visibility of waypoints.
-                    <br />
-                    <br />
-                    Right click on the map to copy the latitude and longitude of
-                    a point to the clipboard.
-                    <br />
-                    <br />
-                    Refresh the page or click the button below to upload a new
-                    file and plot a new route.
+                <div className="note">
+                  <div className="note-title">Legend</div>
+                  <div className="legend">
+                    <span className="orange circle"></span> departure
+                  </div>
+                  <div className="legend">
+                    <span className="green circle"></span> arrival
+                  </div>
+                  <div className="legend">
+                    <span className="yellow circle"></span> waypoint
                   </div>
                 </div>
-                <br />
-                <div>
-                  Size:{" "}
-                  <span style={{ color: tomtomDarkBlue }}>
-                    {routePoints.length} points
-                  </span>
-                </div>
-                {routeSummary && (
-                  <>
-                    <div>
-                      {`Length: `}
-                      <span style={{ color: tomtomDarkBlue }}>
-                        {routeSummary.lengthInMeters}
-                        {` meters`}
-                      </span>
-                    </div>
-                    <div>
-                      {`Travel time: `}
-                      <span style={{ color: tomtomDarkBlue }}>
-                        {secondsToHoursMinutesSeconds(
-                          routeSummary.travelTimeInSeconds || 0
-                        )}
-                      </span>
-                    </div>
-                  </>
-                )}
               </div>
+              <div
+                className="highlighted-field"
+                style={{ borderLeftColor: tomtomDarkBlue }}
+              >
+                <div className="note">
+                  <div className="note-title">Help</div>
+                  Click once to add a point, then click again to display the
+                  Haversine distance between them.
+                  <br />
+                  Press <span className="key">C</span> to center the map on a
+                  specific latitude and longitude.
+                  <br />
+                  Press <span className="key">X</span> to center the map around
+                  the route again.
+                  <br />
+                  Press <span className="key">R</span> to toggle the visibility
+                  of the route.
+                  <br />
+                  Press <span className="key">G</span> to toggle the visibility
+                  of guidance instructions.
+                  <br />
+                  Press <span className="key">W</span> to toggle the visibility
+                  of waypoints.
+                  <br />
+                  Right click on the map to copy the latitude and longitude of a
+                  point to the clipboard.
+                  <br />
+                  Refresh the page or click the button below to upload a new
+                  file and plot a new route.
+                </div>
+              </div>
+
+              <summary
+                className="highlighted-field"
+                style={{ borderLeftColor: tomtomDarkBlue }}
+              >
+                <div className="note">
+                  <div className="note-title">Summary</div>
+                  <p>
+                    Size:{" "}
+                    <span style={{ color: tomtomDarkGray }}>
+                      {routePoints.length} points
+                    </span>
+                  </p>
+                  {routeSummary && (
+                    <>
+                      <p>
+                        Distance:{" "}
+                        <span style={{ color: tomtomDarkGray }}>
+                          {routeSummary.lengthInMeters}
+                          {` meters`}
+                        </span>
+                      </p>
+                      <p>
+                        Duration:{" "}
+                        <span style={{ color: tomtomDarkGray }}>
+                          {secondsToHoursMinutesSeconds(
+                            routeSummary.travelTimeInSeconds || 0
+                          )}
+                        </span>
+                      </p>
+                    </>
+                  )}
+                </div>
+              </summary>
               <FileReaderComponent
                 fileInputRef={fileInputRef}
                 onFileLoaded={setFileContent}

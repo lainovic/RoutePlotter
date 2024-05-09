@@ -172,6 +172,15 @@ input[type="file"]::file-selector-button:hover {
   font-size: 0.8rem;
 }
 
+.note > div, .note > p, .note span {
+  font-size: 0.8rem;
+}
+
+.note-title {
+  font-weight: bold;
+  color: var(--tomtom-dark-blue-color);
+}
+
 .note-container {
   display: flex;
   flex-direction: row;
