@@ -5,7 +5,12 @@ import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, error as logError } from "./logging_utils";
 import { NavigationPoint, GuidanceInstruction } from "./types";
-import { tomtomDarkBlue, tomtomGreen, tomtomOrange, tomtomYellow } from "./colors";
+import {
+  tomtomDarkBlue,
+  tomtomGreen,
+  tomtomOrange,
+  tomtomYellow,
+} from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
 
 export default function Map({
@@ -20,7 +25,7 @@ export default function Map({
   const map = React.useRef<L.Map | null>(null);
   const [routeVisibility, setRouteVisibility] = React.useState(true);
   const [guidanceVisibility, setGuidanceVisibility] = React.useState(false);
-  const [waypointVisibility, setWaypointVisibility] = React.useState(false);
+  const [waypointVisibility, setWaypointVisibility] = React.useState(true);
   const routeMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
   const guidanceMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
   const waypointMarkers = React.useRef<L.LayerGroup>(L.layerGroup());
@@ -163,7 +168,7 @@ export default function Map({
       m.removeLayer(waypointMarkers.current);
       waypointMarkers.current = createWaypointMarkers(waypoints);
       waypointMarkers.current.addTo(m);
-      setWaypointVisibility(false);
+      setWaypointVisibility(true);
     }
   }, [guidanceInstructions]);
 
@@ -217,49 +222,39 @@ export default function Map({
   return (
     <>
       <div id="checkboxes">
-        <div
-          className="checkbox-container"
-          style={{
-            visibility: routePoints.length === 0 ? "hidden" : "visible",
-          }}
-        >
-          <input
-            type="checkbox"
-            id="routePoints"
-            checked={routeVisibility}
-            onChange={(e) => setRouteVisibility(e.target.checked)}
-          />
-          <label htmlFor="routePoints">Route points</label>
-        </div>
-        <div
-          className="checkbox-container"
-          style={{
-            visibility:
-              guidanceInstructions.length === 0 ? "hidden" : "visible",
-          }}
-        >
-          <input
-            type="checkbox"
-            id="instructions"
-            checked={guidanceVisibility}
-            onChange={(e) => setGuidanceVisibility(e.target.checked)}
-          />
-          <label htmlFor="instructions">Guidance instructions</label>
-        </div>
-        <div
-          className="checkbox-container"
-          style={{
-            visibility: waypoints.length === 0 ? "hidden" : "visible",
-          }}
-        >
-          <input
-            type="checkbox"
-            id="instructions"
-            checked={waypointVisibility}
-            onChange={(e) => setWaypointVisibility(e.target.checked)}
-          />
-          <label htmlFor="instructions">Waypoints</label>
-        </div>
+        {routePoints.length > 0 && (
+          <div className="checkbox-container">
+            <input
+              type="checkbox"
+              id="routePoints"
+              checked={routeVisibility}
+              onChange={(e) => setRouteVisibility(e.target.checked)}
+            />
+            <label htmlFor="routePoints">Route points</label>
+          </div>
+        )}
+        {guidanceInstructions.length > 0 && (
+          <div className="checkbox-container">
+            <input
+              type="checkbox"
+              id="instructions"
+              checked={guidanceVisibility}
+              onChange={(e) => setGuidanceVisibility(e.target.checked)}
+            />
+            <label htmlFor="instructions">Guidance instructions</label>
+          </div>
+        )}
+        {waypoints.length > 0 && (
+          <div className="checkbox-container">
+            <input
+              type="checkbox"
+              id="instructions"
+              checked={waypointVisibility}
+              onChange={(e) => setWaypointVisibility(e.target.checked)}
+            />
+            <label htmlFor="instructions">Waypoints</label>
+          </div>
+        )}
       </div>
       <div id="map" style={{ height: "600px" }}></div>
       <ToastContainer />

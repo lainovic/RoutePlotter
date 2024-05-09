@@ -38,8 +38,21 @@ function App() {
   };
 
   const handlePaste = (event: React.ClipboardEvent) => {
+    event.preventDefault();
     const pastedText = event.clipboardData.getData("text");
     setFileContent(pastedText);
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    log("Dropped file", event);
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = reader.result as string;
+      setFileContent(content);
+    };
+    reader.readAsText(file);
   };
 
   React.useEffect(() => {
@@ -74,7 +87,15 @@ function App() {
   }, [failMessage]);
 
   return (
-    <div className="App" onPaste={handlePaste}>
+    <div
+      className="App"
+      onPaste={handlePaste}
+      onDrop={handleDrop}
+      onDragOver={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      }}
+    >
       <header>
         <img id="header-logo" src={tomtomLogo} alt="TomTom Logo" />
         Route Plotter
@@ -134,8 +155,8 @@ function App() {
                   Right click on the map to copy the latitude and longitude of a
                   point to the clipboard.
                   <br />
-                  Refresh the page or click the button below to upload a new
-                  file and plot a new route.
+                  Refresh the page, drop the file again, or click the button
+                  below to upload a new file and plot a new route.
                 </div>
               </div>
 
@@ -203,9 +224,10 @@ function App() {
                   style={{ borderLeftColor: tomtomDarkBlue }}
                 >
                   To get started, upload a TTP or JSON file containing route
-                  data response from the TomTom Routing API. You can click on
-                  the map or the button below to upload, or simply paste the
-                  content directly.
+                  data response from the TomTom Routing API.
+                  <br />
+                  You can click on the map or the button below to upload a file,
+                  or drag and drop a file, or simply paste the content directly.
                 </div>
               )}
               <FileReaderComponent
