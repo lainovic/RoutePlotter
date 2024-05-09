@@ -124,6 +124,9 @@ function App() {
                     Press <span className="key">G</span> to toggle the
                     visibility of guidance instructions.
                     <br />
+                    Press <span className="key">W</span> to toggle the
+                    visibility of waypoints.
+                    <br />
                     <br />
                     Right click on the map to copy the latitude and longitude of
                     a point to the clipboard.
