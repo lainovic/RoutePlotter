@@ -81,6 +81,7 @@ function App() {
       );
       if (routes.length === 0) {
         setFailMessage({ value: "No valid routes found." });
+        setIsLoading(false);
         return;
       }
       const route = routes[0];
@@ -88,6 +89,7 @@ function App() {
       const points: NavigationPoint[] = extractPoints(route, onFailureToParse);
       if (points.length === 0) {
         setFailMessage({ value: "No valid points found." });
+        setIsLoading(false);
         return;
       }
       log("Geo-points extracted", points);

@@ -26,11 +26,16 @@ export function extractRoutes(
     } catch (error) {
       logError("Error parsing as TTP:", error);
       try {
-        return parseCSV(text);
+        return parsePastedCoordinates(text);
       } catch (error) {
-        logError("Error parsing as CSV:", error);
-        onFailure({ value: "Error parsing file: " + error });
-        return [];
+        logError("Error parsing as pasted coordinates:", error);
+        try {
+          return parseCSV(text);
+        } catch (error) {
+          logError("Error parsing as CSV:", error);
+          onFailure({ value: "Error parsing file: " + error });
+          return [];
+        }
       }
     }
   }
@@ -48,11 +53,22 @@ function parseJSON(text: string): any {
   throw new Error("No routes found in JSON");
 }
 
+/**
+ * Parse CSV text into a Route object, assuming the following format:
+ * reception_timestamp,source_timestamp,id,channel,lon,lonAccuracy,lat,latAccuracy,alt,altAccuracy,heading, ...
+ * This format is outputted by the TTP utility coming from TomTom AS Positioning.
+ *
+ * It can also be used for pasted coordinates in the following format:
+ * GeoPoint(latitude = 48.1441900, longitude = 11.5709049), ...
+ */
 function parseCSV(text: string): Route[] {
   var data = Papa.parse<GnssLocation>(text, { header: true });
   log("Parsed CSV:", data.data);
   const locations = data.data as GnssLocation[];
-  const points = parseCSVPoints(locations);
+  let points = parseCSVPoints(locations);
+  if (points.length === 0) {
+    return [];
+  }
   const route: Route = {
     legs: [
       {
@@ -91,6 +107,68 @@ function parseCSVPoints(locations: GnssLocation[]): NavigationPoint[] {
     });
 }
 
+/**
+ * Parse pasted coordinates in the following format:
+ * GeoPoint(latitude = 48.1441900, longitude = 11.5709049), ...
+ */
+function parsePastedCoordinates(text: string): Route[] {
+  // Regular expression to extract latitude and longitude
+  const regex_with_named_args =
+    /GeoPoint\(latitude = ([\d.]+), longitude = ([\d.]+)\)/g;
+  const regex_with_args = /GeoPoint\(([\d.]+), ([\d.]+)\)/g;
+  const navigationPoints: NavigationPoint[] = [];
+
+  let match: RegExpExecArray | null;
+  while ((match = regex_with_named_args.exec(text))) {
+    const latitude = parseFloat(match[1]);
+    const longitude = parseFloat(match[2]);
+    if (latitude && longitude) {
+      navigationPoints.push({
+        timestamp: null,
+        latitude: latitude,
+        longitude: longitude,
+        speed: null,
+      });
+    }
+  }
+
+  if (navigationPoints.length === 0) {
+    while ((match = regex_with_args.exec(text))) {
+      const latitude = parseFloat(match[1]);
+      const longitude = parseFloat(match[2]);
+      if (latitude && longitude) {
+        navigationPoints.push({
+          timestamp: "",
+          latitude: latitude,
+          longitude: longitude,
+          speed: 0,
+        });
+      }
+    }
+  }
+
+  if (navigationPoints.length === 0) {
+    throw new Error("No valid GeoPoints found in pasted text");
+  }
+
+  const route: Route = {
+    legs: [
+      {
+        points: navigationPoints,
+      },
+    ],
+    summary: {
+      lengthInMeters: calculateDistanceInMeters(navigationPoints),
+      travelTimeInSeconds: 0,
+    },
+    guidance: {
+      instructions: [],
+    },
+  };
+
+  return [route];
+}
+
 function parseTTP(
   text: string,
   onSuccess: (message: Message) => void
@@ -113,14 +191,12 @@ function parseTTP(
   if (incoming_points.length === 0) {
     points = outgoing_points;
     onSuccess({
-      value:
-        "No incoming locations found in TTP, using outgoing locations",
+      value: "No incoming locations found in TTP, using outgoing locations",
     });
   } else if (outgoing_points.length === 0) {
     points = incoming_points;
     onSuccess({
-      value:
-        "No outgoing locations found in TTP, using incoming locations",
+      value: "No outgoing locations found in TTP, using incoming locations",
     });
   } else {
     // just take the longest list of points

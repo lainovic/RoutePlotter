@@ -1,5 +1,5 @@
 export interface NavigationPoint {
-  timestamp: string | any;
+  timestamp: string | any | null;
   latitude: number | any;
   longitude: number | any;
   speed: number | any | null;
