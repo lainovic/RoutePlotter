@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function FileReaderComponent({
+export default function FileLoader({
   onFileLoaded,
   fileInputRef,
 }: {

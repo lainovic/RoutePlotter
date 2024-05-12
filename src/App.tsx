@@ -3,7 +3,7 @@ import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Map from "./Map";
-import FileReaderComponent from "./FileReaderComponent";
+import FileLoader from "./FileLoader";
 import { secondsToHoursMinutesSeconds } from "./time_utils";
 import {
   extractPoints,
@@ -223,7 +223,7 @@ function App() {
                   )}
                 </div>
               </summary>
-              <FileReaderComponent
+              <FileLoader
                 fileInputRef={fileInputRef}
                 onFileLoaded={setFileContent}
               />
@@ -260,7 +260,7 @@ function App() {
                   or drag and drop a file, or simply paste the content directly.
                 </div>
               )}
-              <FileReaderComponent
+              <FileLoader
                 fileInputRef={fileInputRef}
                 onFileLoaded={setFileContent}
               />
