@@ -18,7 +18,7 @@ export function extractRoutes(
 ): Route[] {
   if (text.length === 0) return [];
   try {
-    return parseJSON(text);
+    return parseJSON(text, onSuccess);
   } catch (error) {
     logError("Error parsing as JSON:", error);
     try {
@@ -26,11 +26,11 @@ export function extractRoutes(
     } catch (error) {
       logError("Error parsing as TTP:", error);
       try {
-        return parsePastedCoordinates(text);
+        return parsePastedCoordinates(text, onSuccess);
       } catch (error) {
         logError("Error parsing as pasted coordinates:", error);
         try {
-          return parseCSV(text);
+          return parseCSV(text, onSuccess);
         } catch (error) {
           logError("Error parsing as CSV:", error);
           onFailure({ value: "Error parsing file: " + error });
@@ -41,13 +41,14 @@ export function extractRoutes(
   }
 }
 
-function parseJSON(text: string): any {
+function parseJSON(text: string, onSuccess: (message: Message) => void): any {
   const json = JSON.parse(text);
   if (json.formatVersion !== supportedVersion) {
     throw new Error("Unsupported version: " + json.formatVersion);
   }
   log("Parsed JSON:", json);
   if (json && json.routes && Array.isArray(json.routes)) {
+    onSuccess({ value: "Using routes from JSON response" });
     return json.routes;
   }
   throw new Error("No routes found in JSON");
@@ -61,7 +62,10 @@ function parseJSON(text: string): any {
  * It can also be used for pasted coordinates in the following format:
  * GeoPoint(latitude = 48.1441900, longitude = 11.5709049), ...
  */
-function parseCSV(text: string): Route[] {
+function parseCSV(
+  text: string,
+  onSuccess: (message: Message) => void
+): Route[] {
   var data = Papa.parse<GnssLocation>(text, { header: true });
   log("Parsed CSV:", data.data);
   const locations = data.data as GnssLocation[];
@@ -83,6 +87,9 @@ function parseCSV(text: string): Route[] {
       instructions: [],
     },
   };
+
+  onSuccess({ value: "Using CSV locations" });
+
   return [route];
 }
 
@@ -111,7 +118,10 @@ function parseCSVPoints(locations: GnssLocation[]): NavigationPoint[] {
  * Parse pasted coordinates in the following format:
  * GeoPoint(latitude = 48.1441900, longitude = 11.5709049), ...
  */
-function parsePastedCoordinates(text: string): Route[] {
+function parsePastedCoordinates(
+  text: string,
+  onSuccess: (message: Message) => void
+): Route[] {
   // Regular expression to extract latitude and longitude
   const regex_with_named_args =
     /GeoPoint\(latitude = ([\d.]+), longitude = ([\d.]+)\)/g;
@@ -165,6 +175,8 @@ function parsePastedCoordinates(text: string): Route[] {
       instructions: [],
     },
   };
+
+  onSuccess({ value: "Using pasted coordinates" });
 
   return [route];
 }
