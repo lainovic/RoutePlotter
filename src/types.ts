@@ -66,3 +66,7 @@ export interface GnssLocation {
   roll: number;
   rollAccuracy: number;
 }
+
+export interface Message {
+  value: string;
+}

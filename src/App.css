@@ -234,3 +234,34 @@ input[type="file"]::file-selector-button:hover {
   height: 20px;
   border: none;
 }
+
+.loader-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.loader-spinner {
+  border: 8px solid var(--tomtom-gray-color);
+  border-top: 8px solid var(--tomtom-red-color);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 500ms infinite linear;
+}
+
+@keyframes spin {
+  from {
+      transform:rotate(0deg);
+  }
+  to {
+      transform:rotate(360deg);
+  }
+}

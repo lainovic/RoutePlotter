@@ -4,6 +4,7 @@ import {
   Summary,
   GuidanceInstruction,
   GnssLocation,
+  Message,
 } from "./types";
 import { log, error as logError } from "./logging_utils";
 import Papa from "papaparse";
@@ -12,7 +13,8 @@ export const supportedVersion = "0.0.12";
 
 export function extractRoutes(
   text: string,
-  onFailure: (message: string) => void
+  onFailure: (message: Message) => void,
+  onSuccess: (message: Message) => void
 ): Route[] {
   if (text.length === 0) return [];
   try {
@@ -20,14 +22,14 @@ export function extractRoutes(
   } catch (error) {
     logError("Error parsing as JSON:", error);
     try {
-      return parseTTP(text);
+      return parseTTP(text, onSuccess);
     } catch (error) {
       logError("Error parsing as TTP:", error);
       try {
         return parseCSV(text);
       } catch (error) {
         logError("Error parsing as CSV:", error);
-        onFailure("Error parsing file: " + error);
+        onFailure({ value: "Error parsing file: " + error });
         return [];
       }
     }
@@ -89,7 +91,10 @@ function parseCSVPoints(locations: GnssLocation[]): NavigationPoint[] {
     });
 }
 
-function parseTTP(text: string): Route[] {
+function parseTTP(
+  text: string,
+  onSuccess: (message: Message) => void
+): Route[] {
   const lines = text.split("\n");
   const header = "BEGIN:ApplicationVersion=TomTom Positioning";
   if (!lines[0].startsWith(header)) {
@@ -107,13 +112,24 @@ function parseTTP(text: string): Route[] {
   let points: NavigationPoint[] = [];
   if (incoming_points.length === 0) {
     points = outgoing_points;
+    onSuccess({
+      value:
+        "No incoming locations found in TTP, using outgoing locations",
+    });
   } else if (outgoing_points.length === 0) {
     points = incoming_points;
-  } else { // just take the longest list of points
+    onSuccess({
+      value:
+        "No outgoing locations found in TTP, using incoming locations",
+    });
+  } else {
+    // just take the longest list of points
     if (outgoing_points.length > incoming_points.length) {
       points = outgoing_points;
+      onSuccess({ value: "Using TTP outgoing locations" });
     } else {
       points = incoming_points;
+      onSuccess({ value: "Using TTP incoming locations" });
     }
   }
   const route: Route = {
@@ -268,7 +284,7 @@ export function extractRouteSummary(route: Route): Summary {
 
 export function extractPoints(
   route: Route,
-  onFailure: (message: string) => void
+  onFailure: (message: Message) => void
 ): NavigationPoint[] {
   try {
     const points: NavigationPoint[] = [];
@@ -284,7 +300,7 @@ export function extractPoints(
     });
     return points;
   } catch (error) {
-    onFailure("Error extracting geo points: " + error);
+    onFailure({ value: "Error extracting geo points: " + error });
     return [];
   }
 }

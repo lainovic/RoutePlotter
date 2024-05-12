@@ -1,6 +1,6 @@
 import React from "react";
 import L from "leaflet";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, error as logError } from "./logging_utils";
@@ -89,18 +89,10 @@ export default function Map({
 
       try {
         await navigator.clipboard.writeText(coordinates);
-        toast.success("Coordinates copied to clipboard!", {
-          position: "top-center",
-          hideProgressBar: true,
-          autoClose: 500, // Duration in milliseconds
-        });
+        toast.success("Coordinates copied to clipboard!");
       } catch (error) {
         logError("Failed to copy coordinates to clipboard:", error);
-        toast.error("Failed to copy coordinates to clipboard!", {
-          position: "top-center",
-          hideProgressBar: true,
-          autoClose: 500, // Duration in milliseconds
-        });
+        toast.error("Failed to copy coordinates to clipboard!");
       }
 
       log("end of contextmenu");
@@ -118,11 +110,10 @@ export default function Map({
     log("Route points changed", routePoints);
     const m = map.current;
     if (m !== null) {
-      m.removeLayer(routeMarkers.current);
+      if (routeVisibility) m.removeLayer(routeMarkers.current);
       routeMarkers.current = createRouteMarkers(routePoints);
-      routeMarkers.current.addTo(m);
+      if (routeVisibility) routeMarkers.current.addTo(m);
       centerAroundRoute(m, routePoints);
-      setRouteVisibility(true);
     }
   }, [routePoints]);
 
@@ -142,10 +133,9 @@ export default function Map({
     log("Guidance instructions changed", guidanceInstructions);
     const m = map.current;
     if (m !== null) {
-      m.removeLayer(guidanceMarkers.current);
+      if (guidanceVisibility) m.removeLayer(guidanceMarkers.current);
       guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
-      guidanceMarkers.current.addTo(m);
-      setGuidanceVisibility(false);
+      if (guidanceVisibility) guidanceMarkers.current.addTo(m);
     }
   }, [guidanceInstructions]);
 
@@ -165,10 +155,9 @@ export default function Map({
     log("Waypoints changed", guidanceInstructions);
     const m = map.current;
     if (m !== null) {
-      m.removeLayer(waypointMarkers.current);
+      if (waypointVisibility) m.removeLayer(waypointMarkers.current);
       waypointMarkers.current = createWaypointMarkers(waypoints);
-      waypointMarkers.current.addTo(m);
-      setWaypointVisibility(true);
+      if (waypointVisibility) waypointMarkers.current.addTo(m);
     }
   }, [guidanceInstructions]);
 
@@ -257,7 +246,6 @@ export default function Map({
         )}
       </div>
       <div id="map" style={{ height: "600px" }}></div>
-      <ToastContainer />
     </>
   );
 }

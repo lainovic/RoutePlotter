@@ -12,7 +12,13 @@ import {
   extractRouteSummary,
   extractWaypoints,
 } from "./route_utils";
-import { NavigationPoint, GuidanceInstruction, Route, Summary } from "./types";
+import {
+  NavigationPoint,
+  GuidanceInstruction,
+  Route,
+  Summary,
+  Message,
+} from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
 import { log } from "./logging_utils";
@@ -26,15 +32,24 @@ function App() {
   >([]);
   const [waypoints, setWaypoints] = React.useState<NavigationPoint[]>([]);
   const [routeSummary, setRouteSummary] = React.useState<Summary | null>(null);
-  const [failMessage, setFailMessage] = React.useState<string | null>(null);
+  const [failMessage, setFailMessage] = React.useState<Message | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState<Message | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+
   const fileInputRef = React.useRef<any>(null);
 
-  const onFailedToParse = (message: string) => {
+  const onFailureToParse = (message: Message) => {
     setFailMessage(message);
   };
 
+  const onSuccessfulParse = (message: Message) => {
+    setSuccessMessage(message);
+  };
+
   const isFailMessageCleared = () => {
-    return failMessage !== null && failMessage == "";
+    return failMessage !== null && failMessage.value == "";
   };
 
   const handlePaste = (event: React.ClipboardEvent) => {
@@ -57,34 +72,44 @@ function App() {
 
   React.useEffect(() => {
     if (fileContent === "") return;
-    const routes: Route[] = extractRoutes(fileContent, onFailedToParse);
-    if (routes.length === 0) {
-      setFailMessage("No routes found in file.");
-      return;
-    }
-    const route = routes[0];
-    log("Route loaded", route);
-    const points: NavigationPoint[] = extractPoints(route, onFailedToParse);
-    if (points.length === 0) {
-      setFailMessage("No valid points found.");
-      return;
-    }
-    log("Geo-points extracted", points);
-    setRoutePoints(points);
-    setGuidanceInstructions(extractGuidanceInstructions(route));
-    setWaypoints(extractWaypoints(route));
-    setRouteSummary(extractRouteSummary(route));
-    setFailMessage("");
+    setIsLoading(true);
+    setTimeout(() => {
+      const routes: Route[] = extractRoutes(
+        fileContent,
+        onFailureToParse,
+        onSuccessfulParse
+      );
+      if (routes.length === 0) {
+        setFailMessage({ value: "No valid routes found." });
+        return;
+      }
+      const route = routes[0];
+      log("Route loaded", route);
+      const points: NavigationPoint[] = extractPoints(route, onFailureToParse);
+      if (points.length === 0) {
+        setFailMessage({ value: "No valid points found." });
+        return;
+      }
+      log("Geo-points extracted", points);
+      setRoutePoints(points);
+      setGuidanceInstructions(extractGuidanceInstructions(route));
+      setWaypoints(extractWaypoints(route));
+      setRouteSummary(extractRouteSummary(route));
+      setFailMessage({ value: "" });
+      setIsLoading(false);
+    });
   }, [fileContent]);
 
   React.useEffect(() => {
-    if (failMessage === "") return;
-    toast.error(failMessage, {
-      position: "top-center",
-      hideProgressBar: true,
-      autoClose: 500, // Duration in milliseconds
-    });
+    if (failMessage?.value === "") return;
+    toast.error(failMessage?.value);
   }, [failMessage]);
+
+  React.useEffect(() => {
+    if (successMessage?.value === "") return;
+    log("Success message", successMessage);
+    toast.success(successMessage?.value);
+  }, [successMessage]);
 
   return (
     <div
@@ -100,6 +125,11 @@ function App() {
         <img id="header-logo" src={tomtomLogo} alt="TomTom Logo" />
         Route Plotter
       </header>
+      {isLoading && (
+        <div className="loader-container">
+          <div className="loader-spinner"></div>
+        </div>
+      )}
       <main>
         {isFailMessageCleared() ? (
           <>
@@ -216,7 +246,7 @@ function App() {
                   className="highlighted-field"
                   style={{ borderLeftColor: tomTomRed }}
                 >
-                  Error: {failMessage}
+                  Error: {failMessage.value}
                 </div>
               ) : (
                 <div
@@ -235,10 +265,10 @@ function App() {
                 onFileLoaded={setFileContent}
               />
             </div>
-            <ToastContainer />
           </>
         )}
       </main>
+      <ToastContainer position="top-center" hideProgressBar autoClose={1500} />
     </div>
   );
 }
