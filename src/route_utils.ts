@@ -102,7 +102,20 @@ function parseTTP(text: string): Route[] {
       `Unsupported TTP version: ${ttpVersion}, expected ${supportedVersion}`
     );
   }
-  const points = parseTTPPoints(lines);
+  const incoming_points = parseTTPPoints(lines, TYPE_INCOMING_LOCATION);
+  const outgoing_points = parseTTPPoints(lines, TYPE_OUTGOING_LOCATION);
+  let points: NavigationPoint[] = [];
+  if (incoming_points.length === 0) {
+    points = outgoing_points;
+  } else if (outgoing_points.length === 0) {
+    points = incoming_points;
+  } else { // just take the longest list of points
+    if (outgoing_points.length > incoming_points.length) {
+      points = outgoing_points;
+    } else {
+      points = incoming_points;
+    }
+  }
   const route: Route = {
     legs: [
       {
@@ -120,7 +133,7 @@ function parseTTP(text: string): Route[] {
   return [route];
 }
 
-function parseTTPPoints(lines: string[]): NavigationPoint[] {
+function parseTTPPoints(lines: string[], type: string): NavigationPoint[] {
   const points: NavigationPoint[] = [];
   let seenTimestaps = new Set<string>();
   lines.forEach((line) => {
@@ -135,9 +148,13 @@ function parseTTPPoints(lines: string[]): NavigationPoint[] {
     ) {
       return;
     }
+    if (parts[1] !== type) {
+      return;
+    }
     const lon = parts[3];
     const lat = parts[5];
     const speed = parts[11];
+    // we only care about outgoing locations (i.e. post-processed input locations)
     if (!lon || !lat || !speed) {
       seenTimestaps.add(reception_timestamp);
       return;
@@ -271,3 +288,6 @@ export function extractPoints(
     return [];
   }
 }
+
+const TYPE_OUTGOING_LOCATION = "237";
+const TYPE_INCOMING_LOCATION = "245";
