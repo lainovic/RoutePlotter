@@ -255,7 +255,7 @@ function createRouteMarkers(routePoints: NavigationPoint[]): L.LayerGroup {
   routePoints.forEach((point: NavigationPoint, index: number) => {
     const { latitude, longitude } = point;
     const color = tomtomDarkBlue;
-    const radius = index === 0 || index === routePoints.length - 1 ? 8 : 4;
+    const radius = 4;
     const m = L.circleMarker([latitude, longitude], {
       radius: radius,
       fillColor: color,

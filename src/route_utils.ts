@@ -122,40 +122,26 @@ function parsePastedCoordinates(
   text: string,
   onSuccess: (message: Message) => void
 ): Route[] {
-  // Regular expression to extract latitude and longitude
   const regex_with_named_args =
     /GeoPoint\(latitude = ([\d.]+), longitude = ([\d.]+)\)/g;
   const regex_with_args = /GeoPoint\(([\d.]+), ([\d.]+)\)/g;
+  const regexes = [regex_with_named_args, regex_with_args];
   const navigationPoints: NavigationPoint[] = [];
-
   let match: RegExpExecArray | null;
-  while ((match = regex_with_named_args.exec(text))) {
-    const latitude = parseFloat(match[1]);
-    const longitude = parseFloat(match[2]);
-    if (latitude && longitude) {
-      navigationPoints.push({
-        timestamp: null,
-        latitude: latitude,
-        longitude: longitude,
-        speed: null,
-      });
-    }
-  }
-
-  if (navigationPoints.length === 0) {
-    while ((match = regex_with_args.exec(text))) {
+  regexes.forEach((regex) => {
+    while ((match = regex.exec(text))) {
       const latitude = parseFloat(match[1]);
       const longitude = parseFloat(match[2]);
       if (latitude && longitude) {
         navigationPoints.push({
-          timestamp: "",
+          timestamp: null,
           latitude: latitude,
           longitude: longitude,
-          speed: 0,
+          speed: null,
         });
       }
     }
-  }
+  });
 
   if (navigationPoints.length === 0) {
     throw new Error("No valid GeoPoints found in pasted text");
