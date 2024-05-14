@@ -122,9 +122,10 @@ function parsePastedCoordinates(
   text: string,
   onSuccess: (message: Message) => void
 ): Route[] {
+  log("Parsing for pasted coordinates:", text);
   const regex_with_named_args =
-    /GeoPoint\(latitude = ([\d.]+), longitude = ([\d.]+)\)/g;
-  const regex_with_args = /GeoPoint\(([\d.]+), ([\d.]+)\)/g;
+    /GeoPoint\(latitude = ([\d.-]+), longitude = ([\d.-]+)\)/g;
+  const regex_with_args = /GeoPoint\(([\d.-]+), ([\d.-]+)\)/g;
   const regexes = [regex_with_named_args, regex_with_args];
   const navigationPoints: NavigationPoint[] = [];
   let match: RegExpExecArray | null;
