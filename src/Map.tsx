@@ -175,7 +175,7 @@ export default function Map({
 
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === "c" || event.key === "C") {
+      if (event.key === "p" || event.key === "P") {
         const m = map.current;
         if (m !== null) {
           const latitude = window.prompt("Enter latitude:");

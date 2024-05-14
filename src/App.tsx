@@ -169,7 +169,7 @@ function App() {
                   Click once to add a point, then click again to display the
                   Haversine distance between them.
                   <br />
-                  Press <span className="key">C</span> to center the map on a
+                  Press <span className="key">P</span> to position the map on a
                   specific latitude and longitude.
                   <br />
                   Press <span className="key">X</span> to center the map around
