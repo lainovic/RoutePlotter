@@ -1,12 +1,35 @@
 import L from "leaflet";
-import { tomTomBlack } from "./colors";
+import { tomTomRed } from "./colors";
+
+export interface RouteMarkerNode {
+  marker: L.Marker;
+  prev: RouteMarkerNode | null;
+  lineToPrev: L.Polyline | null;
+  next: RouteMarkerNode | null;
+  lineToNext: L.Polyline | null;
+}
 
 export function createMarker(lat: number, lng: number, icon: L.DivIcon) {
-  return L.marker([lat, lng], { icon: icon });
+  return L.marker([lat, lng], { icon: icon, draggable: true });
 }
 
 export function createLine(start: L.LatLng, end: L.LatLng) {
-  return L.polyline([start, end], { color: tomTomBlack });
+  return L.polyline([start, end], { color: tomTomRed });
+}
+
+export function createLineFromTo(
+  nodeA: RouteMarkerNode,
+  nodeB: RouteMarkerNode
+) {
+  const lineFromAtoB = createLine(
+    nodeA.marker.getLatLng(),
+    nodeB.marker.getLatLng()
+  );
+
+  nodeA.lineToNext = lineFromAtoB;
+  nodeB.lineToPrev = lineFromAtoB;
+
+  return lineFromAtoB;
 }
 
 export function createPopup(latlng: L.LatLng, text: string) {

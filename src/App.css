@@ -34,14 +34,37 @@
 header {
   display: flex;
   flex-direction: row;
+  gap: 4px;
   justify-content: flex-start;
   align-items: center;
   font-weight: 700;
   color: var(--tomtom-red-color);
   font-size: 1rem;
   align-self: flex-start;
-  border-bottom: 1px solid var(--tomtom-gray-color);
-  box-shadow: 0px 15px 10px -15px var(--tomtom-gray-color);
+  padding: 0 20px;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  list-style-type: none;
+}
+
+.tab {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  color: var(--tomtom-dark-gray-color);
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.tab.active {
+  color: var(--tomtom-red-color);
+  opacity: 1;
 }
 
 main {
@@ -55,7 +78,7 @@ main {
 }
 
 #map-container {
-  width: 80%;
+  width: 70%;
   padding: 20px;
   border-radius: 10px;
   border: 2px dashed var(--tomtom-gray-color);
@@ -65,6 +88,14 @@ main {
   width: 100%;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.sidebar {
+  width: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 #route-title {
@@ -92,21 +123,13 @@ main {
   border-radius: 10px;
 }
 
-.sidebar {
-  width: 20%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
 input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   width: 20px;
   height: 20px;
-  border: 2px solid var(--tomtom-dark-blue-color); /* Border color */
+  border: 2px solid var(--tomtom-red-color); /* Border color */
   border-radius: 4px;
   outline: none;
   cursor: pointer;
@@ -114,9 +137,7 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:checked {
-  background-color: var(
-    --tomtom-dark-blue-color
-  ); /* Background color when checked */
+  background-color: var(--tomtom-red-color);
 }
 
 .checkbox-container {
@@ -138,18 +159,40 @@ input[type="checkbox"]:checked {
   color: var(--tomtom-dark-gray-color);
 }
 
+.highlighted-field ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.highlighted-field li {
+  padding: 0 10px;
+  margin-bottom: 4px;
+}
+
+.highlighted-field li::before {
+  content: "■";
+  color: var(--tomtom-red-color);
+  padding-right: 8px;
+}
+
+code {
+  background-color: var(--tomtom-gray-color);
+  padding: 0.2em 0.4em;
+  border-radius: 0.2em;
+}
+
 input[type="file"]::file-selector-button {
-  border: 2px solid var(--tomtom-dark-blue-color);
+  border: 2px solid var(--tomtom-red-color);
   padding: 0.2em 0.4em;
   border-radius: 0.2em;
   background-color: var(--tomtom-white-color);
-  color: var(--tomtom-dark-blue-color);
+  color: var(--tomtom-red-color);
   transition: 0.5s;
 }
 
 input[type="file"]::file-selector-button:hover {
-  background-color: var(--tomtom-dark-blue-color);
-  border: 2px solid var(--tomtom-dark-blue-color);
+  background-color: var(--tomtom-red-color);
+  border: 2px solid var(--tomtom-red-color);
   color: var(--tomtom-white-color);
 }
 
@@ -172,13 +215,15 @@ input[type="file"]::file-selector-button:hover {
   font-size: 0.8rem;
 }
 
-.note > div, .note > p, .note span {
+.note > div,
+.note > p,
+.note span {
   font-size: 0.8rem;
 }
 
 .note-title {
   font-weight: bold;
-  color: var(--tomtom-dark-blue-color);
+  color: var(--tomtom-red-color);
 }
 
 .note-container {
@@ -259,9 +304,17 @@ input[type="file"]::file-selector-button:hover {
 
 @keyframes spin {
   from {
-      transform:rotate(0deg);
+    transform: rotate(0deg);
   }
   to {
-      transform:rotate(360deg);
+    transform: rotate(360deg);
   }
+}
+
+.route-point-icon {
+  background-color: var(--tomtom-red-color);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  border: none;
 }

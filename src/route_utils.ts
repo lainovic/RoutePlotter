@@ -48,7 +48,7 @@ function parseJSON(text: string, onSuccess: (message: Message) => void): any {
   }
   log("Parsed JSON:", json);
   if (json && json.routes && Array.isArray(json.routes)) {
-    onSuccess({ value: "Using routes from JSON response" });
+    onSuccess({ value: "JSON response" });
     return json.routes;
   }
   throw new Error("No routes found in JSON");
@@ -88,7 +88,7 @@ function parseCSV(
     },
   };
 
-  onSuccess({ value: "Using CSV locations" });
+  onSuccess({ value: "CSV locations" });
 
   return [route];
 }
@@ -123,10 +123,11 @@ function parsePastedCoordinates(
   onSuccess: (message: Message) => void
 ): Route[] {
   log("Parsing for pasted coordinates:", text);
+  const regex_raw_coordinates = /([\d.-]+),?\s?([\d.-]+)/g;
   const regex_with_named_args =
-    /GeoPoint\(latitude = ([\d.-]+), longitude = ([\d.-]+)\)/g;
+    /GeoPoint\(latitude\s?=\s?([\d.-]+),\s?longitude\s?=\s?([\d.-]+)\)/g;
   const regex_with_args = /GeoPoint\(([\d.-]+), ([\d.-]+)\)/g;
-  const regexes = [regex_with_named_args, regex_with_args];
+  const regexes = [regex_raw_coordinates, regex_with_named_args, regex_with_args];
   const navigationPoints: NavigationPoint[] = [];
   let match: RegExpExecArray | null;
   regexes.forEach((regex) => {
@@ -163,7 +164,7 @@ function parsePastedCoordinates(
     },
   };
 
-  onSuccess({ value: "Using pasted coordinates" });
+  onSuccess({ value: "Pasted points" });
 
   return [route];
 }
@@ -201,10 +202,10 @@ function parseTTP(
     // just take the longest list of points
     if (outgoing_points.length > incoming_points.length) {
       points = outgoing_points;
-      onSuccess({ value: "Using TTP outgoing locations" });
+      onSuccess({ value: "TTP outgoing locations" });
     } else {
       points = incoming_points;
-      onSuccess({ value: "Using TTP incoming locations" });
+      onSuccess({ value: "TTP incoming locations" });
     }
   }
   const route: Route = {

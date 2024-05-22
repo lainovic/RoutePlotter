@@ -2,7 +2,8 @@ import React from "react";
 import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Map from "./Map";
+import PlotMap from "./PlotMap";
+import RouteMap from "./RouteMap";
 import FileLoader from "./FileLoader";
 import { secondsToHoursMinutesSeconds } from "./time_utils";
 import {
@@ -22,7 +23,10 @@ import {
 import tomtomLogo from "./assets/tomtom-logo.png";
 import mapPlaceholder from "./assets/map-placeholder.png";
 import { log } from "./logging_utils";
-import { tomtomDarkBlue, tomtomDarkGray, tomTomRed } from "./colors";
+import { tomtomDarkGray, tomTomRed } from "./colors";
+
+const ROUTE_CREATOR_MODE = "route-creator";
+const ROUTE_PLOTTER_MODE = "route-plotter";
 
 function App() {
   const [fileContent, setFileContent] = React.useState<string>("");
@@ -37,6 +41,8 @@ function App() {
     null
   );
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+
+  const [activeTab, setActiveTab] = React.useState<string>(ROUTE_PLOTTER_MODE);
 
   const fileInputRef = React.useRef<any>(null);
 
@@ -125,7 +131,33 @@ function App() {
     >
       <header>
         <img id="header-logo" src={tomtomLogo} alt="TomTom Logo" />
-        Route Plotter
+        route
+        <ul className="tabs">
+          <li>
+            <div
+              className={
+                activeTab === ROUTE_PLOTTER_MODE ? "tab active" : "tab"
+              }
+              onClick={() => {
+                setActiveTab(ROUTE_PLOTTER_MODE);
+              }}
+            >
+              plotter
+            </div>
+          </li>
+          <li>
+            <div
+              className={
+                activeTab === ROUTE_CREATOR_MODE ? "tab active" : "tab"
+              }
+              onClick={() => {
+                setActiveTab(ROUTE_CREATOR_MODE);
+              }}
+            >
+              creator
+            </div>
+          </li>
+        </ul>
       </header>
       {isLoading && (
         <div className="loader-container">
@@ -133,10 +165,40 @@ function App() {
         </div>
       )}
       <main>
-        {isFailMessageCleared() ? (
+        {activeTab === ROUTE_CREATOR_MODE ? (
           <>
             <div id="map-container">
-              <Map
+              <RouteMap />
+            </div>
+            <div className="sidebar">
+              <div
+                className="highlighted-field"
+                style={{ borderLeftColor: tomTomRed }}
+              >
+                <ul>
+                  <li>Press left click on the map to add a point.</li>
+                  <li>Press right click on the point to remove it.</li>
+                  <li>You can drag the points around.</li>
+                </ul>
+              </div>
+              <div
+                className="highlighted-field"
+                style={{ borderLeftColor: tomTomRed }}
+              >
+                <div className="note">
+                  <div className="note-title">Help</div>
+                  Press <span className="key">X</span> to clear all elements.
+                  <br />
+                  Press <span className="key">C</span> to center the map around
+                  points.
+                </div>
+              </div>
+            </div>
+          </>
+        ) : isFailMessageCleared() ? (
+          <>
+            <div id="map-container">
+              <PlotMap
                 routePoints={routePoints}
                 guidanceInstructions={guidanceInstructions}
                 waypoints={waypoints}
@@ -145,7 +207,7 @@ function App() {
             <div className="sidebar">
               <div
                 className="highlighted-field"
-                style={{ borderLeftColor: tomtomDarkBlue }}
+                style={{ borderLeftColor: tomTomRed }}
               >
                 <div className="note">
                   <div className="note-title">Legend</div>
@@ -162,12 +224,14 @@ function App() {
               </div>
               <div
                 className="highlighted-field"
-                style={{ borderLeftColor: tomtomDarkBlue }}
+                style={{ borderLeftColor: tomTomRed }}
               >
                 <div className="note">
                   <div className="note-title">Help</div>
                   Click once to add a point, then click again to display the
                   Haversine distance between them.
+                  <br />
+                  Press <span className="key">C</span> to go into drawing mode.
                   <br />
                   Press <span className="key">P</span> to position the map on a
                   specific latitude and longitude.
@@ -187,14 +251,14 @@ function App() {
                   Right click on the map to copy the latitude and longitude of a
                   point to the clipboard.
                   <br />
-                  Refresh the page, drop the file again, or click the button
+                  Paste the content, drop the file again, or click the button
                   below to upload a new file and plot a new route.
                 </div>
               </div>
 
               <summary
                 className="highlighted-field"
-                style={{ borderLeftColor: tomtomDarkBlue }}
+                style={{ borderLeftColor: tomTomRed }}
               >
                 <div className="note">
                   <div className="note-title">Summary</div>
@@ -253,13 +317,32 @@ function App() {
               ) : (
                 <div
                   className="highlighted-field"
-                  style={{ borderLeftColor: tomtomDarkBlue }}
+                  style={{
+                    borderLeftColor: tomTomRed,
+                  }}
                 >
-                  To get started, upload a TTP or JSON file containing route
-                  data response from the TomTom Routing API.
-                  <br />
-                  You can click on the map or the button below to upload a file,
-                  or drag and drop a file, or simply paste the content directly.
+                  <ul>
+                    <li>
+                      Click on the map or the button below to upload a file
+                      containing route data. The file can be in TTP or JSON
+                      format coming from the TomTom Routing API.
+                    </li>
+                    <li>Drag and drop a file to upload it.</li>
+                    <li>
+                      Paste the coordinates directly. The format of the
+                      coordinate should be:
+                      <br />
+                      <code>Geopoint(latitude-value, longitude-value)</code>
+                      <br />
+                      or:
+                      <br />
+                      <code>Geopoint(latitude=value, longitude=value)</code>
+                      <br />
+                      or just:
+                      <br />
+                      <code>latitude-value, longitude-value</code>
+                    </li>
+                  </ul>
                 </div>
               )}
               <FileLoader

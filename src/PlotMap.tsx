@@ -34,7 +34,6 @@ export default function Map({
   const rulerLine = React.useRef<L.Polyline | null>(null);
 
   React.useLayoutEffect(() => {
-    log("Creating map");
     const newMap = L.map("map");
 
     // Add tile layer from OpenStreetMap
@@ -204,7 +203,7 @@ export default function Map({
     };
   }, [routePoints]);
 
-  log("Map rendering:");
+  log("Rendering:");
   log("- Route points:", routePoints);
   log("- Guidance instructions:", guidanceInstructions);
   log("- Waypoints:", waypoints);
