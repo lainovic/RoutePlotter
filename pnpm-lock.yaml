@@ -11,15 +11,9 @@ importers:
       '@types/leaflet':
         specifier: ^1.9.12
         version: 1.9.12
-      '@types/papaparse':
-        specifier: ^5.3.14
-        version: 5.3.14
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
-      papaparse:
-        specifier: ^5.4.1
-        version: 5.4.1
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -415,9 +409,6 @@ packages:
 
   '@types/node@20.12.7':
     resolution: {integrity: sha512-wq0cICSkRLVaf3UGLMGItu/PtdY7oaXaI/RVU+xliKVOtRna3PRY57ZDfztpDL0n11vfymMUnXv8QwYCO7L1wg==}
-
-  '@types/papaparse@5.3.14':
-    resolution: {integrity: sha512-LxJ4iEFcpqc6METwp9f6BV6VVc43m6MfH0VqFosHvrUgfXiFe6ww7R3itkOQ+TCK6Y+Iv/+RnnvtRZnkc5Kc9g==}
 
   '@types/prop-types@15.7.12':
     resolution: {integrity: sha512-5zvhXYtRNRluoE/jAp4GVsSduVUzNWKkOZrCDBWYtE7biZywwdC2AcEzg+cSMLFRfVgeAFqpfNabiPjxFddV1Q==}
@@ -827,9 +818,6 @@ packages:
   p-locate@5.0.0:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
-
-  papaparse@5.4.1:
-    resolution: {integrity: sha512-HipMsgJkZu8br23pW15uvo6sib6wne/4woLZPlFf3rpDyMe9ywEXUsuD7+6K9PRkJlVT51j/sCOYDKGGS3ZJrw==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -1252,10 +1240,7 @@ snapshots:
   '@types/node@20.12.7':
     dependencies:
       undici-types: 5.26.5
-
-  '@types/papaparse@5.3.14':
-    dependencies:
-      '@types/node': 20.12.7
+    optional: true
 
   '@types/prop-types@15.7.12': {}
 
@@ -1731,8 +1716,6 @@ snapshots:
     dependencies:
       p-limit: 3.1.0
 
-  papaparse@5.4.1: {}
-
   parent-module@1.0.1:
     dependencies:
       callsites: 3.1.0
@@ -1857,7 +1840,8 @@ snapshots:
 
   typescript@5.4.5: {}
 
-  undici-types@5.26.5: {}
+  undici-types@5.26.5:
+    optional: true
 
   uri-js@4.4.1:
     dependencies:

@@ -3,13 +3,11 @@ import {
   Route,
   Summary,
   GuidanceInstruction,
-  GnssLocation,
   Message,
   Maybe,
   ApplicationError,
 } from "./types";
 import { log, error as logError } from "./logging_utils";
-import Papa from "papaparse";
 
 export const supportedVersion = "0.0.12";
 
@@ -33,7 +31,6 @@ export type MaybePoints = Maybe<ApplicationError, Points>;
  * 1. JSON
  * 2. TTP
  * 3. pasted coordinates
- * 4. CSV
  *
  * @param text - The text to parse for routes.
  * @returns A `Maybe` containing the parsed routes, or a failure with an error message.
@@ -52,12 +49,7 @@ export function extractRoutes(text: string): MaybeRoutes {
         return parsePastedCoordinates(text);
       } catch (error) {
         logError("Error parsing as pasted coordinates:", error);
-        try {
-          return parseCSV(text);
-        } catch (error) {
-          logError("Error parsing as CSV:", error);
-          return Maybe.failure({ message: "Error parsing file" });
-        }
+        return Maybe.failure({ message: "Error parsing text" });
       }
     }
   }
@@ -77,68 +69,10 @@ function parseJSON(text: string): MaybeRoutes {
   if (json && json.routes && Array.isArray(json.routes)) {
     return Maybe.success({
       routes: json.routes,
-      message: { value: "JSON response" },
+      message: { value: "JSON" },
     });
   }
   throw new Error("No routes found in JSON");
-}
-
-/**
- * Parse CSV text into a Route object, assuming the following format:
- * reception_timestamp,source_timestamp,id,channel,lon,lonAccuracy,lat,latAccuracy,alt,altAccuracy,heading, ...
- * This format is outputted by the TTP utility coming from TomTom AS Positioning.
- *
- * It can also be used for pasted coordinates in the following format:
- * GeoPoint(latitude = 48.1441900, longitude = 11.5709049), ...
- */
-function parseCSV(text: string): MaybeRoutes {
-  var data = Papa.parse<GnssLocation>(text, { header: true });
-  log("Parsed CSV:", data.data);
-  const locations = data.data as GnssLocation[];
-  let points = parseCSVPoints(locations);
-  if (points.length === 0) {
-    throw new Error("No valid locations found in CSV");
-  }
-  const route: Route = {
-    legs: [
-      {
-        points: points,
-      },
-    ],
-    summary: {
-      lengthInMeters: calculateDistanceInMeters(points),
-      travelTimeInSeconds: calculateTravelTimeInSeconds(points),
-    },
-    guidance: {
-      instructions: [],
-    },
-  };
-
-  return Maybe.success({
-    routes: [route],
-    message: { value: "CSV locations" },
-  });
-}
-
-function parseCSVPoints(locations: GnssLocation[]): NavigationPoint[] {
-  return locations
-    .filter(
-      (location) =>
-        location.lat !== undefined &&
-        location.lon !== undefined &&
-        location.source_timestamp !== undefined
-    )
-    .map((location) => {
-      const point: NavigationPoint = {
-        timestamp: location.source_timestamp,
-        latitude: parseFloat(location.lat.toString()),
-        longitude: parseFloat(location.lon.toString()),
-        speed: parseFloat(location.speed.toString()).toFixed(
-          2
-        ) as any as number,
-      };
-      return point;
-    });
 }
 
 /**
@@ -228,20 +162,18 @@ function parseTTP(text: string): MaybeRoutes {
   const message: Message = { value: "" };
   if (incoming_points.length === 0) {
     points = outgoing_points;
-    message.value =
-      "No incoming locations found in TTP, using outgoing locations";
+    message.value = "TTP: outgoing locations";
   } else if (outgoing_points.length === 0) {
     points = incoming_points;
-    message.value =
-      "No outgoing locations found in TTP, using incoming locations";
+    message.value = "TTP: incoming locations";
   } else {
     // just take the longest list of points
     if (outgoing_points.length > incoming_points.length) {
       points = outgoing_points;
-      message.value = "TTP outgoing locations";
+      message.value = "TTP: outgoing locations";
     } else {
       points = incoming_points;
-      message.value = "TTP incoming locations";
+      message.value = "TTP: incoming locations";
     }
   }
   const route: Route = {

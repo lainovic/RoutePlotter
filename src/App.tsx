@@ -90,14 +90,12 @@ function App() {
       extractRoutes(fileContent)
         .ifSuccess((result) => {
           setSuccessMessage(result.message);
-          setTimeout(() => {
-            handleExtractedRoutes(result.routes)
-              .ifSuccess(setSuccessMessage)
-              .ifFailure((error) => {
-                log("Failed to handle the route extraction", error);
-                setFailMessage({ value: error.message });
-              });
-          });
+          handleExtractedRoutes(result.routes)
+            .ifSuccess(setSuccessMessage)
+            .ifFailure((error) => {
+              log("Failed to handle the route extraction", error);
+              setFailMessage({ value: error.message });
+            });
         })
         .ifFailure((error) => {
           log("Failed to extract routes", error);
@@ -132,7 +130,7 @@ function App() {
         if (points.length === 0) {
           return Maybe.failure({ message: "No valid points found." });
         }
-        log("Points extracted:", points);
+        log(result.message.value, points);
         setRoutePoints(points);
         setGuidanceInstructions(extractGuidanceInstructions(route));
         setWaypoints(extractWaypoints(route));
@@ -156,7 +154,6 @@ function App() {
   React.useEffect(() => {
     if (successMessage === null) return;
     if (successMessage.value === "") return;
-    log("Success message", successMessage);
     toast.success(successMessage.value);
   }, [successMessage]);
 
@@ -296,8 +293,6 @@ function App() {
                       Click once to add a point, then click again to display the
                       Haversine distance between them.
                       <br />
-                      Press <span className="key">C</span> to go into drawing
-                      mode.
                       <br />
                       Press <span className="key">P</span> to position the map
                       on a specific latitude and longitude.
@@ -421,7 +416,17 @@ function App() {
           </>
         )}
       </main>
-      <ToastContainer position="top-center" hideProgressBar autoClose={1500} />
+      <ToastContainer
+        position="top-center"
+        hideProgressBar
+        autoClose={1500}
+        closeOnClick
+        pauseOnHover
+        style={{
+          height: "50px",
+          textAlign: "center",
+        }}
+      />
     </div>
   );
 }

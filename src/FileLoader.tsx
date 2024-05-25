@@ -26,7 +26,7 @@ export default function FileLoader({
     <input
       ref={fileInputRef}
       type="file"
-      accept=".csv, .txt, .json, .ttp"
+      accept=".json, .ttp"
       onChange={handleFileInputChange}
     />
   );

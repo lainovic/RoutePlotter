@@ -90,7 +90,7 @@ export default function Map({
 
       try {
         await navigator.clipboard.writeText(coordinates);
-        toast.success("Coordinates copied to clipboard!");
+        toast.info("Coordinates copied to clipboard!");
       } catch (error) {
         logError("Failed to copy coordinates to clipboard:", error);
         toast.error("Failed to copy coordinates to clipboard!");
