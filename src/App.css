@@ -155,7 +155,7 @@ input[type="checkbox"]:checked {
 }
 
 .highlighted-field {
-  border-left: 2px solid var(--tomtom-dark-gray-color);
+  border-left: 2px solid var(--tomtom-red-color);
   padding-left: 10px;
   color: var(--tomtom-dark-gray-color);
 }

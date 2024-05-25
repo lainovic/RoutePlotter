@@ -27,52 +27,7 @@ export default function RouteMap({}: {}) {
 
     newRouteMapInstance.on("click", (e) => {
       const { lat, lng } = e.latlng;
-      const marker = createMarker(lat, lng, routePointIcon).addTo(
-        markers.current
-      );
-
-      marker.on("drag", (e) => {
-        const marker = e.target as L.Marker;
-        if (!markerToNode.current.has(marker)) {
-          logError("Marker not found in map");
-          return;
-        }
-        const node = markerToNode.current.get(marker)!;
-        moveLines(node);
-      });
-
-      marker.on("contextmenu", (e) => {
-        const marker = e.target as L.Marker;
-        if (!markerToNode.current.has(marker)) {
-          logError("Marker not found in map");
-          return;
-        }
-        const node = markerToNode.current.get(marker)!;
-        removeNode(node, newRouteMapInstance);
-        if (node.prev && node.next) {
-          createLineFromTo(node.prev, node.next).addTo(lines.current);
-        }
-      });
-
-      const node: RouteMarkerNode = {
-        marker: marker,
-        prev: null,
-        next: null,
-        lineToPrev: null,
-        lineToNext: null,
-      };
-
-      if (markers.current.getLayers().length > 1) {
-        const prevMarker = markers.current.getLayers()[
-          markers.current.getLayers().length - 2
-        ] as L.Marker;
-        const prevNode = markerToNode.current.get(prevMarker)!;
-        createLineFromTo(prevNode, node).addTo(lines.current);
-        node.prev = prevNode;
-        prevNode.next = node;
-      }
-
-      markerToNode.current.set(marker, node);
+      addNewMarker(lat, lng, newRouteMapInstance);
     });
 
     markers.current.addTo(newRouteMapInstance);
@@ -93,6 +48,55 @@ export default function RouteMap({}: {}) {
     };
   }, []);
 
+  function addNewMarker(latitude: number, longitude: number, map: L.Map) {
+    const marker = createMarker(latitude, longitude, routePointIcon).addTo(
+      markers.current
+    );
+
+    marker.on("drag", (e) => {
+      const marker = e.target as L.Marker;
+      if (!markerToNode.current.has(marker)) {
+        logError("Marker not found in map");
+        return;
+      }
+      const node = markerToNode.current.get(marker)!;
+      moveLines(node);
+    });
+
+    marker.on("contextmenu", (e) => {
+      const marker = e.target as L.Marker;
+      if (!markerToNode.current.has(marker)) {
+        logError("Marker not found in map");
+        return;
+      }
+      const node = markerToNode.current.get(marker)!;
+      removeNode(node, map);
+      if (node.prev && node.next) {
+        createLineFromTo(node.prev, node.next).addTo(lines.current);
+      }
+    });
+
+    const node: RouteMarkerNode = {
+      marker: marker,
+      prev: null,
+      next: null,
+      lineToPrev: null,
+      lineToNext: null,
+    };
+
+    if (markers.current.getLayers().length > 1) {
+      const prevMarker = markers.current.getLayers()[
+        markers.current.getLayers().length - 2
+      ] as L.Marker;
+      const prevNode = markerToNode.current.get(prevMarker)!;
+      createLineFromTo(prevNode, node).addTo(lines.current);
+      node.prev = prevNode;
+      prevNode.next = node;
+    }
+
+    markerToNode.current.set(marker, node);
+  }
+
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.key === "c" || event.key === "C") {
@@ -108,6 +112,20 @@ export default function RouteMap({}: {}) {
         const m = map.current;
         if (m) {
           centerAroundMarkers(m);
+        }
+      } else if (event.key === "p" || event.key === "P") {
+        const m = map.current;
+        if (m !== null) {
+          const latitude = window.prompt("Enter latitude:");
+          if (latitude === null) return;
+          const longitude = window.prompt("Enter longitude:");
+          if (longitude === null) return;
+          if (latitude && longitude) {
+            const lat = Number(latitude);
+            const lng = Number(longitude);
+            addNewMarker(lat, lng, m);
+            centerAroundMarkers(m);
+          }
         }
       }
     };

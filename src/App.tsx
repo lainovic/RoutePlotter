@@ -24,7 +24,9 @@ import {
 } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import { log } from "./logging_utils";
-import { tomtomDarkGray, tomTomRed } from "./colors";
+import { tomtomDarkGray } from "./colors";
+import KeyInput from "./KeyInput";
+import Button from "./Button";
 
 const ROUTE_CREATOR_MODE = "route-creator";
 const ROUTE_PLOTTER_MODE = "route-plotter";
@@ -185,12 +187,14 @@ function App() {
   return (
     <div
       className="App"
-      onPaste={handlePaste}
-      onDrop={handleDrop}
-      onDragOver={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      }}
+      {...(activeTab === ROUTE_PLOTTER_MODE && {
+        onPaste: handlePaste,
+        onDrop: handleDrop,
+        onDragOver: (event: React.DragEvent) => {
+          event.preventDefault();
+          event.stopPropagation();
+        },
+      })}
     >
       <header>
         <img id="header-logo" src={tomtomLogo} alt="TomTom Logo" />
@@ -235,21 +239,39 @@ function App() {
               <RouteMap />
             </div>
             <div className="sidebar">
+              <div className="highlighted-field">
+                <div className="note">
+                  <div className="note-title">Inputs</div>
+                  <KeyInput label="TomTom API key" />
+                </div>
+              </div>
               <div
-                className="highlighted-field"
-                style={{ borderLeftColor: tomTomRed }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                }}
               >
+                <Button
+                  text="Generate route"
+                  onClick={() => {
+                    alert("Not implemented yet");
+                  }}
+                />
+              </div>
+              <div className="highlighted-field">
                 <div className="note">
                   <div className="note-title">Help</div>
-                  <ul>
-                    <li>Press left click on the map to add a point.</li>
-                    <li>Press right click on the point to remove it.</li>
-                    <li>You can drag the points around.</li>
-                  </ul>
+                  You can drag the points around. Press left click on the map to
+                  add a point. Press right click on the point to remove it.
+                  <br />
                   Press <span className="key">C</span> to clear all elements.
                   <br />
                   Press <span className="key">X</span> to center the map around
                   the route.
+                  <br />
+                  Press <span className="key">P</span> to enter the coordinates
+                  of a point and to add it to the route.
                 </div>
               </div>
             </div>
@@ -290,10 +312,7 @@ function App() {
                       </div>
                     </>
                   )}
-                  <div
-                    className="highlighted-field"
-                    style={{ borderLeftColor: tomTomRed }}
-                  >
+                  <div className="highlighted-field">
                     <div className="note">
                       <div className="note-title">Legend</div>
                       <div className="legend">
@@ -307,10 +326,7 @@ function App() {
                       </div>
                     </div>
                   </div>
-                  <div
-                    className="highlighted-field"
-                    style={{ borderLeftColor: tomTomRed }}
-                  >
+                  <div className="highlighted-field">
                     <div className="note">
                       <div className="note-title">Help</div>
                       Click once to add a point, then click again to display the
@@ -340,10 +356,7 @@ function App() {
                     </div>
                   </div>
 
-                  <summary
-                    className="highlighted-field"
-                    style={{ borderLeftColor: tomTomRed }}
-                  >
+                  <summary className="highlighted-field">
                     <div className="note">
                       <div className="note-title">Summary</div>
                       <p>
@@ -377,12 +390,7 @@ function App() {
               ) : (
                 <>
                   {
-                    <div
-                      className="highlighted-field"
-                      style={{
-                        borderLeftColor: tomTomRed,
-                      }}
-                    >
+                    <div className="highlighted-field">
                       <div className="note">
                         <div className="note-title">Help</div>
                         <ul>

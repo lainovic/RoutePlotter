@@ -290,14 +290,12 @@ function createWaypointMarkers(waypoints: NavigationPoint[]): L.LayerGroup {
     const m = L.marker([latitude, longitude], {
       icon: L.icon({
         iconUrl: image,
-        shadowUrl:
-          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
         iconSize: [41, 41],
         iconAnchor: [21, 40],
         popupAnchor: [0, -30],
       }),
     }).bindPopup(
-      `<b>${index + 1}.</b> ${latitude}, ${longitude}${
+      `<b>${index}.</b> ${latitude}, ${longitude}${
         point.speed != null ? `<br>speed: ${point.speed} m/s` : ""
       }`
     );
@@ -324,11 +322,7 @@ function createGuidanceMarkers(
         shadowSize: [41, 41],
       }),
     }).bindPopup(
-      `<b>${index + 1}. ${
-        instruction.maneuver
-      }</b><br>point: ${latitude}, ${longitude}<br>route offset: ${
-        instruction.routeOffsetInMeters
-      } m`
+      `<b>${index}. ${instruction.maneuver}</b><br>point: ${latitude}, ${longitude}<br>route offset: ${instruction.routeOffsetInMeters} m`
     );
     markers.addLayer(marker);
   });
