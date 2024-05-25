@@ -1,6 +1,5 @@
 import React from "react";
 import L from "leaflet";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, error as logError } from "./logging_utils";
@@ -18,18 +17,19 @@ export default function RouteMap({}: {}) {
   });
 
   React.useLayoutEffect(() => {
-    const newMapInstance = L.map("map");
+    const newRouteMapInstance = L.map("map");
+    log("RouteMap created");
 
     // Add tile layer from OpenStreetMap
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(newMapInstance);
+    }).addTo(newRouteMapInstance);
 
-    newMapInstance.on("click", (e) => {
+    newRouteMapInstance.on("click", (e) => {
       const { lat, lng } = e.latlng;
-      const marker = createMarker(lat, lng, routePointIcon)
-        // .addTo(newMapInstance)
-        .addTo(markers.current);
+      const marker = createMarker(lat, lng, routePointIcon).addTo(
+        markers.current
+      );
 
       marker.on("drag", (e) => {
         const marker = e.target as L.Marker;
@@ -48,11 +48,9 @@ export default function RouteMap({}: {}) {
           return;
         }
         const node = markerToNode.current.get(marker)!;
-        removeNode(node, newMapInstance);
+        removeNode(node, newRouteMapInstance);
         if (node.prev && node.next) {
-          createLineFromTo(node.prev, node.next)
-            // .addTo(newMapInstance)
-            .addTo(lines.current);
+          createLineFromTo(node.prev, node.next).addTo(lines.current);
         }
       });
 
@@ -69,38 +67,35 @@ export default function RouteMap({}: {}) {
           markers.current.getLayers().length - 2
         ] as L.Marker;
         const prevNode = markerToNode.current.get(prevMarker)!;
-        createLineFromTo(prevNode, node)
-          // .addTo(newMapInstance)
-          .addTo(lines.current);
+        createLineFromTo(prevNode, node).addTo(lines.current);
         node.prev = prevNode;
         prevNode.next = node;
       }
 
-      // markers.current.addLayer(marker);
       markerToNode.current.set(marker, node);
     });
 
-    markers.current.addTo(newMapInstance);
-    lines.current.addTo(newMapInstance);
+    markers.current.addTo(newRouteMapInstance);
+    lines.current.addTo(newRouteMapInstance);
 
-    newMapInstance.on("contextmenu", () => {
+    newRouteMapInstance.on("contextmenu", () => {
       // do nothing
     });
 
     // set the map view to Amsterdam
-    newMapInstance.setView([52.379189, 4.899431], 13);
+    newRouteMapInstance.setView([52.379189, 4.899431], 13);
 
-    map.current = newMapInstance;
+    map.current = newRouteMapInstance;
 
     return () => {
-      newMapInstance.remove();
-      log("Map removed");
+      newRouteMapInstance.remove();
+      log("RouteMap removed");
     };
   }, []);
 
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === "x" || event.key === "X") {
+      if (event.key === "c" || event.key === "C") {
         const m = map.current;
         if (m) {
           m.removeLayer(markers.current);
@@ -108,9 +103,8 @@ export default function RouteMap({}: {}) {
           markerToNode.current.clear();
           markers.current = L.layerGroup().addTo(m);
           lines.current = L.layerGroup().addTo(m);
-          toast.success("All elements removed");
         }
-      } else if (event.key === "c" || event.key === "C") {
+      } else if (event.key === "x" || event.key === "X") {
         const m = map.current;
         if (m) {
           centerAroundMarkers(m);
@@ -184,9 +178,5 @@ export default function RouteMap({}: {}) {
     ]);
   }
 
-  return (
-    <>
-      <div id="map" style={{ height: "600px" }}></div>
-    </>
-  );
+  return <div id="map"></div>;
 }

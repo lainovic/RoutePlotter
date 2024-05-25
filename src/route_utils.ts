@@ -5,51 +5,80 @@ import {
   GuidanceInstruction,
   GnssLocation,
   Message,
+  Maybe,
+  ApplicationError,
 } from "./types";
 import { log, error as logError } from "./logging_utils";
 import Papa from "papaparse";
 
 export const supportedVersion = "0.0.12";
 
-export function extractRoutes(
-  text: string,
-  onFailure: (message: Message) => void,
-  onSuccess: (message: Message) => void
-): Route[] {
-  if (text.length === 0) return [];
+export interface Routes {
+  routes: Route[];
+  message: Message;
+}
+
+interface Points {
+  points: NavigationPoint[];
+  message: Message;
+}
+
+export type MaybeRoutes = Maybe<ApplicationError, Routes>;
+export type MaybePoints = Maybe<ApplicationError, Points>;
+
+/**
+ * Attempts to extract routes from the provided text, trying various parsing methods.
+ * The order of parsing methods is important, as the first successful method will be used.
+ * The order is:
+ * 1. JSON
+ * 2. TTP
+ * 3. pasted coordinates
+ * 4. CSV
+ *
+ * @param text - The text to parse for routes.
+ * @returns A `Maybe` containing the parsed routes, or a failure with an error message.
+ */
+export function extractRoutes(text: string): MaybeRoutes {
+  if (text.length === 0) return Maybe.failure({ message: "Empty file" });
   try {
-    return parseJSON(text, onSuccess);
+    return parseJSON(text);
   } catch (error) {
     logError("Error parsing as JSON:", error);
     try {
-      return parseTTP(text, onSuccess);
+      return parseTTP(text);
     } catch (error) {
       logError("Error parsing as TTP:", error);
       try {
-        return parsePastedCoordinates(text, onSuccess);
+        return parsePastedCoordinates(text);
       } catch (error) {
         logError("Error parsing as pasted coordinates:", error);
         try {
-          return parseCSV(text, onSuccess);
+          return parseCSV(text);
         } catch (error) {
           logError("Error parsing as CSV:", error);
-          onFailure({ value: "Error parsing file: " + error });
-          return [];
+          return Maybe.failure({ message: "Error parsing file" });
         }
       }
     }
   }
 }
 
-function parseJSON(text: string, onSuccess: (message: Message) => void): any {
+function parseJSON(text: string): MaybeRoutes {
   const json = JSON.parse(text);
+  if (!json) {
+    throw new Error("Invalid JSON");
+  }
   if (json.formatVersion !== supportedVersion) {
-    throw new Error("Unsupported version: " + json.formatVersion);
+    return Maybe.failure({
+      message: `Unsupported version: ${json.formatVersion}`,
+    });
   }
   log("Parsed JSON:", json);
   if (json && json.routes && Array.isArray(json.routes)) {
-    onSuccess({ value: "JSON response" });
-    return json.routes;
+    return Maybe.success({
+      routes: json.routes,
+      message: { value: "JSON response" },
+    });
   }
   throw new Error("No routes found in JSON");
 }
@@ -62,16 +91,13 @@ function parseJSON(text: string, onSuccess: (message: Message) => void): any {
  * It can also be used for pasted coordinates in the following format:
  * GeoPoint(latitude = 48.1441900, longitude = 11.5709049), ...
  */
-function parseCSV(
-  text: string,
-  onSuccess: (message: Message) => void
-): Route[] {
+function parseCSV(text: string): MaybeRoutes {
   var data = Papa.parse<GnssLocation>(text, { header: true });
   log("Parsed CSV:", data.data);
   const locations = data.data as GnssLocation[];
   let points = parseCSVPoints(locations);
   if (points.length === 0) {
-    return [];
+    throw new Error("No valid locations found in CSV");
   }
   const route: Route = {
     legs: [
@@ -88,9 +114,10 @@ function parseCSV(
     },
   };
 
-  onSuccess({ value: "CSV locations" });
-
-  return [route];
+  return Maybe.success({
+    routes: [route],
+    message: { value: "CSV locations" },
+  });
 }
 
 function parseCSVPoints(locations: GnssLocation[]): NavigationPoint[] {
@@ -118,45 +145,21 @@ function parseCSVPoints(locations: GnssLocation[]): NavigationPoint[] {
  * Parse pasted coordinates in the following format:
  * GeoPoint(latitude = 48.1441900, longitude = 11.5709049), ...
  */
-function parsePastedCoordinates(
-  text: string,
-  onSuccess: (message: Message) => void
-): Route[] {
+function parsePastedCoordinates(text: string): MaybeRoutes {
   log("Parsing for pasted coordinates:", text);
-  const regex_raw_coordinates = /([\d.-]+),?\s?([\d.-]+)/g;
-  const regex_with_named_args =
-    /GeoPoint\(latitude\s?=\s?([\d.-]+),\s?longitude\s?=\s?([\d.-]+)\)/g;
-  const regex_with_args = /GeoPoint\(([\d.-]+), ([\d.-]+)\)/g;
-  const regexes = [regex_raw_coordinates, regex_with_named_args, regex_with_args];
-  const navigationPoints: NavigationPoint[] = [];
-  let match: RegExpExecArray | null;
-  regexes.forEach((regex) => {
-    while ((match = regex.exec(text))) {
-      const latitude = parseFloat(match[1]);
-      const longitude = parseFloat(match[2]);
-      if (latitude && longitude) {
-        navigationPoints.push({
-          timestamp: null,
-          latitude: latitude,
-          longitude: longitude,
-          speed: null,
-        });
-      }
-    }
-  });
-
-  if (navigationPoints.length === 0) {
+  const points: NavigationPoint[] = findMatches(text);
+  if (points.length === 0) {
     throw new Error("No valid GeoPoints found in pasted text");
   }
 
   const route: Route = {
     legs: [
       {
-        points: navigationPoints,
+        points: points,
       },
     ],
     summary: {
-      lengthInMeters: calculateDistanceInMeters(navigationPoints),
+      lengthInMeters: calculateDistanceInMeters(points),
       travelTimeInSeconds: 0,
     },
     guidance: {
@@ -164,15 +167,49 @@ function parsePastedCoordinates(
     },
   };
 
-  onSuccess({ value: "Pasted points" });
-
-  return [route];
+  return Maybe.success({
+    routes: [route],
+    message: { value: "Pasted points" },
+  });
 }
 
-function parseTTP(
-  text: string,
-  onSuccess: (message: Message) => void
-): Route[] {
+function findMatches(text: string): NavigationPoint[] {
+  const regex_raw_coordinates = /([\d.-]+)[,\s]+([\d.-]+)/g;
+  const regex_raw_coordinates_with_named_args =
+    /latitude\s?=\s?([\d.-]+)[,\s]+longitude\s?=\s?([\d.-]+)/g;
+  const regex_with_named_args =
+    /GeoPoint\(latitude\s?=\s?([\d.-]+)[,\s]+longitude\s?=\s?([\d.-]+)\)/g;
+  const regex_with_args = /GeoPoint\(([\d.-]+)[,\s]+([\d.-]+)\)/g;
+  const regexes = [
+    regex_with_named_args,
+    regex_with_args,
+    regex_raw_coordinates_with_named_args,
+    regex_raw_coordinates,
+  ];
+  const result: NavigationPoint[] = [];
+  let match: RegExpExecArray | null;
+  for (let regex of regexes) {
+    while ((match = regex.exec(text))) {
+      log("Match:", match);
+      const latitude = parseFloat(match[1]);
+      const longitude = parseFloat(match[2]);
+      if (latitude && longitude) {
+        result.push({
+          timestamp: null,
+          latitude: latitude,
+          longitude: longitude,
+          speed: null,
+        });
+      }
+    }
+    if (result.length > 0) {
+      break;
+    }
+  }
+  return result;
+}
+
+function parseTTP(text: string): MaybeRoutes {
   const lines = text.split("\n");
   const header = "BEGIN:ApplicationVersion=TomTom Positioning";
   if (!lines[0].startsWith(header)) {
@@ -181,31 +218,30 @@ function parseTTP(
   const supportedVersion = "0.7";
   const ttpVersion = lines[0].slice(header.length + 1);
   if (ttpVersion !== supportedVersion) {
-    throw new Error(
-      `Unsupported TTP version: ${ttpVersion}, expected ${supportedVersion}`
-    );
+    return Maybe.failure({
+      message: `Unsupported TTP version: ${ttpVersion}, expected ${supportedVersion}`,
+    });
   }
   const incoming_points = parseTTPPoints(lines, TYPE_INCOMING_LOCATION);
   const outgoing_points = parseTTPPoints(lines, TYPE_OUTGOING_LOCATION);
   let points: NavigationPoint[] = [];
+  const message: Message = { value: "" };
   if (incoming_points.length === 0) {
     points = outgoing_points;
-    onSuccess({
-      value: "No incoming locations found in TTP, using outgoing locations",
-    });
+    message.value =
+      "No incoming locations found in TTP, using outgoing locations";
   } else if (outgoing_points.length === 0) {
     points = incoming_points;
-    onSuccess({
-      value: "No outgoing locations found in TTP, using incoming locations",
-    });
+    message.value =
+      "No outgoing locations found in TTP, using incoming locations";
   } else {
     // just take the longest list of points
     if (outgoing_points.length > incoming_points.length) {
       points = outgoing_points;
-      onSuccess({ value: "TTP outgoing locations" });
+      message.value = "TTP outgoing locations";
     } else {
       points = incoming_points;
-      onSuccess({ value: "TTP incoming locations" });
+      message.value = "TTP incoming locations";
     }
   }
   const route: Route = {
@@ -222,7 +258,7 @@ function parseTTP(
       instructions: [],
     },
   };
-  return [route];
+  return Maybe.success({ routes: [route], message: message });
 }
 
 function parseTTPPoints(lines: string[], type: string): NavigationPoint[] {
@@ -246,7 +282,6 @@ function parseTTPPoints(lines: string[], type: string): NavigationPoint[] {
     const lon = parts[3];
     const lat = parts[5];
     const speed = parts[11];
-    // we only care about outgoing locations (i.e. post-processed input locations)
     if (!lon || !lat || !speed) {
       seenTimestaps.add(reception_timestamp);
       return;
@@ -358,10 +393,7 @@ export function extractRouteSummary(route: Route): Summary {
   return route.summary;
 }
 
-export function extractPoints(
-  route: Route,
-  onFailure: (message: Message) => void
-): NavigationPoint[] {
+export function extractPoints(route: Route): MaybePoints {
   try {
     const points: NavigationPoint[] = [];
     route.legs.forEach((leg, index) => {
@@ -374,10 +406,9 @@ export function extractPoints(
         }
       }
     });
-    return points;
+    return Maybe.success({ points, message: { value: "Extracted points" } });
   } catch (error) {
-    onFailure({ value: "Error extracting geo points: " + error });
-    return [];
+    return Maybe.failure({ message: "Error extracting points: " + error });
   }
 }
 

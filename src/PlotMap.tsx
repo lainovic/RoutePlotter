@@ -12,6 +12,7 @@ import {
   tomtomYellow,
 } from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
+import { anyOf } from "./utils";
 
 export default function Map({
   routePoints,
@@ -34,12 +35,13 @@ export default function Map({
   const rulerLine = React.useRef<L.Polyline | null>(null);
 
   React.useLayoutEffect(() => {
-    const newMap = L.map("map");
+    const newPlotMapInstance = L.map("map");
+    log("PlotMap created");
 
     // Add tile layer from OpenStreetMap
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(newMap);
+    }).addTo(newPlotMapInstance);
 
     var number1Icon = L.divIcon({
       className: "custom-div-icon",
@@ -53,20 +55,20 @@ export default function Map({
       iconSize: [20, 20],
     });
 
-    newMap.on("click", (e) => {
+    newPlotMapInstance.on("click", (e) => {
       const { lat, lng } = e.latlng;
       if (rulerStartMarker.current === null) {
         rulerStartMarker.current = createMarker(lat, lng, number1Icon).addTo(
-          newMap
+          newPlotMapInstance
         );
       } else if (rulerEndMarker.current === null) {
         rulerEndMarker.current = createMarker(lat, lng, number2Icon).addTo(
-          newMap
+          newPlotMapInstance
         );
         rulerLine.current = createLine(
           rulerStartMarker.current.getLatLng(),
           rulerEndMarker.current.getLatLng()
-        ).addTo(newMap);
+        ).addTo(newPlotMapInstance);
         createPopup(
           e.latlng,
           "The distance between the points is: " +
@@ -75,14 +77,14 @@ export default function Map({
               .distanceTo(rulerEndMarker.current.getLatLng())
               .toFixed(2) +
             " meters"
-        ).openOn(newMap);
+        ).openOn(newPlotMapInstance);
       } else {
         cleanup(rulerStartMarker, rulerEndMarker, rulerLine);
       }
     });
 
-    newMap.on("contextmenu", async (e) => {
-      const latlng = newMap.mouseEventToLatLng(e.originalEvent);
+    newPlotMapInstance.on("contextmenu", async (e) => {
+      const latlng = newPlotMapInstance.mouseEventToLatLng(e.originalEvent);
       const coordinates = `${latlng.lat}, ${latlng.lng}`;
       log("Coordinates:", coordinates);
 
@@ -97,11 +99,14 @@ export default function Map({
       log("end of contextmenu");
     });
 
-    map.current = newMap;
+    // set the map view to Amsterdam
+    newPlotMapInstance.setView([52.379189, 4.899431], 13);
+
+    map.current = newPlotMapInstance;
 
     return () => {
-      newMap.remove();
-      log("Map removed");
+      newPlotMapInstance.remove();
+      log("PlotMap removed");
     };
   }, []);
 
@@ -209,42 +214,44 @@ export default function Map({
   log("- Waypoints:", waypoints);
   return (
     <>
-      <div id="checkboxes">
-        {routePoints.length > 0 && (
-          <div className="checkbox-container">
-            <input
-              type="checkbox"
-              id="routePoints"
-              checked={routeVisibility}
-              onChange={(e) => setRouteVisibility(e.target.checked)}
-            />
-            <label htmlFor="routePoints">Route points</label>
-          </div>
-        )}
-        {guidanceInstructions.length > 0 && (
-          <div className="checkbox-container">
-            <input
-              type="checkbox"
-              id="instructions"
-              checked={guidanceVisibility}
-              onChange={(e) => setGuidanceVisibility(e.target.checked)}
-            />
-            <label htmlFor="instructions">Guidance instructions</label>
-          </div>
-        )}
-        {waypoints.length > 0 && (
-          <div className="checkbox-container">
-            <input
-              type="checkbox"
-              id="instructions"
-              checked={waypointVisibility}
-              onChange={(e) => setWaypointVisibility(e.target.checked)}
-            />
-            <label htmlFor="instructions">Waypoints</label>
-          </div>
-        )}
-      </div>
-      <div id="map" style={{ height: "600px" }}></div>
+      {anyOf([routePoints, guidanceInstructions, waypoints]) && (
+        <div id="checkboxes">
+          {routePoints.length > 0 && (
+            <div className="checkbox-container">
+              <input
+                type="checkbox"
+                id="routePoints"
+                checked={routeVisibility}
+                onChange={(e) => setRouteVisibility(e.target.checked)}
+              />
+              <label htmlFor="routePoints">Route points</label>
+            </div>
+          )}
+          {guidanceInstructions.length > 0 && (
+            <div className="checkbox-container">
+              <input
+                type="checkbox"
+                id="instructions"
+                checked={guidanceVisibility}
+                onChange={(e) => setGuidanceVisibility(e.target.checked)}
+              />
+              <label htmlFor="instructions">Guidance instructions</label>
+            </div>
+          )}
+          {waypoints.length > 0 && (
+            <div className="checkbox-container">
+              <input
+                type="checkbox"
+                id=""
+                checked={waypointVisibility}
+                onChange={(e) => setWaypointVisibility(e.target.checked)}
+              />
+              <label htmlFor="instructions">Waypoints</label>
+            </div>
+          )}
+        </div>
+      )}
+      <div id="map"></div>
     </>
   );
 }
@@ -309,7 +316,7 @@ function createGuidanceMarkers(
     const marker = L.marker([latitude, longitude], {
       icon: L.icon({
         iconUrl:
-          "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+          "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
         shadowUrl:
           "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
         iconSize: [25, 41],
