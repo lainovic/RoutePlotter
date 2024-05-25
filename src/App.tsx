@@ -29,6 +29,11 @@ import { tomtomDarkGray, tomTomRed } from "./colors";
 const ROUTE_CREATOR_MODE = "route-creator";
 const ROUTE_PLOTTER_MODE = "route-plotter";
 
+enum DataSource {
+  File = "file",
+  Clipboard = "clipboard",
+}
+
 type MaybeMessage = Maybe<ApplicationError, Message | null>;
 
 /**
@@ -53,21 +58,29 @@ function App() {
 
   const [activeTab, setActiveTab] = React.useState<string>(ROUTE_PLOTTER_MODE);
 
-  const [replaceInputData, setReplaceInputData] = React.useState<boolean>(true);
+  const [replaceData, setReplaceData] = React.useState<boolean>(true);
 
-  const [ifPasted, setIfPasted] = React.useState<boolean>(false);
+  const [ifPasted, setPasted] = React.useState<boolean>(false);
 
   const fileInputRef = React.useRef<any>(null);
+
+  const dataSource = React.useRef<DataSource | null>(null);
+
+  const resetContent = (content: string) => {
+    setFileContent(content);
+    setPasted(false);
+  };
 
   const handlePaste = (event: React.ClipboardEvent) => {
     event.preventDefault();
     const pastedText = event.clipboardData.getData("text");
-    if (replaceInputData) {
-      setFileContent(pastedText);
-    } else {
-      setFileContent(fileContent + " " + pastedText);
-    }
-    setIfPasted(true);
+    dataSource.current = DataSource.Clipboard;
+
+    const updatedContent = replaceData
+      ? pastedText
+      : `${fileContent} ${pastedText}`;
+
+    resetContent(updatedContent);
   };
 
   const handleDrop = (event: React.DragEvent) => {
@@ -75,10 +88,10 @@ function App() {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
     const reader = new FileReader();
+    dataSource.current = DataSource.File;
     reader.onload = () => {
       const content = reader.result as string;
-      setFileContent(content);
-      setIfPasted(false);
+      resetContent(content);
     };
     reader.readAsText(file);
   };
@@ -90,12 +103,22 @@ function App() {
       extractRoutes(fileContent)
         .ifSuccess((result) => {
           setSuccessMessage(result.message);
-          handleExtractedRoutes(result.routes)
-            .ifSuccess(setSuccessMessage)
-            .ifFailure((error) => {
-              log("Failed to handle the route extraction", error);
-              setFailMessage({ value: error.message });
-            });
+          setTimeout(() => {
+            handleExtractedRoutes(result.routes)
+              .ifSuccess((message) => {
+                setSuccessMessage(message);
+                if (dataSource.current === DataSource.Clipboard) {
+                  setPasted(true);
+                }
+              })
+              .ifFailure((error) => {
+                log("Failed to handle the route extraction", error);
+                setFailMessage({ value: error.message });
+              })
+              .finally(() => {
+                log("Finished handling extracted routes");
+              });
+          });
         })
         .ifFailure((error) => {
           log("Failed to extract routes", error);
@@ -111,7 +134,8 @@ function App() {
    * Handles the extraction of routes from a given array of routes.
    *
    * If no valid routes are found, a failure message is returned.
-   * Otherwise, the first route is loaded, and its points, guidance instructions, waypoints, and route summary are extracted and set in the component state.
+   * Otherwise, the first route is loaded, and its points, guidance instructions, waypoints,
+   * and route summary are extracted and set in the component state.
    * If any errors occur during the extraction process, a failure message is set in the component state.
    *
    * @param routes - An array of routes to be processed.
@@ -121,28 +145,29 @@ function App() {
     if (routes.length === 0) {
       return Maybe.failure({ message: "No valid routes found." });
     }
+
     log("Routes extracted:", routes);
     const route = routes[0];
     log("Only the first route is loaded:", route);
-    extractPoints(route)
-      .ifSuccess((result) => {
-        const points = result.points;
-        if (points.length === 0) {
-          return Maybe.failure({ message: "No valid points found." });
-        }
-        log(result.message.value, points);
-        setRoutePoints(points);
-        setGuidanceInstructions(extractGuidanceInstructions(route));
-        setWaypoints(extractWaypoints(route));
-        setRouteSummary(extractRouteSummary(route));
-        return Maybe.success(result.message);
-      })
-      .ifFailure((error) => {
-        log("Failed to extract routes", error);
-        return Maybe.failure({ message: error.message });
-      });
 
-    return Maybe.success(null);
+    const extractPointsResult = extractPoints(route);
+    if (extractPointsResult.isFailure()) {
+      log("Failed to extract routes:", extractPointsResult.error!!.message);
+      return Maybe.failure(extractPointsResult.error!!);
+    }
+
+    const points = extractPointsResult.result!!.points;
+    if (points.length === 0) {
+      return Maybe.failure({ message: "No valid points found." });
+    }
+
+    log(extractPointsResult.result!!.message.value, points);
+    setRoutePoints(points);
+    setGuidanceInstructions(extractGuidanceInstructions(route));
+    setWaypoints(extractWaypoints(route));
+    setRouteSummary(extractRouteSummary(route));
+
+    return Maybe.success(extractPointsResult.result!!.message);
   };
 
   React.useEffect(() => {
@@ -239,9 +264,9 @@ function App() {
                 waypoints={waypoints}
               />
             </div>
-            {routePoints.length > 0 ? (
-              <>
-                <div className="sidebar">
+            <div className="sidebar">
+              {routePoints.length > 0 ? (
+                <>
                   {ifPasted && (
                     <>
                       <div className="checkbox-container">
@@ -249,10 +274,8 @@ function App() {
                           type="checkbox"
                           id="replace-data"
                           name="replace-data"
-                          checked={replaceInputData}
-                          onChange={() =>
-                            setReplaceInputData(!replaceInputData)
-                          }
+                          checked={replaceData}
+                          onChange={() => setReplaceData(!replaceData)}
                         />
                         <label htmlFor="replace-data">
                           Replace current data
@@ -350,15 +373,9 @@ function App() {
                       )}
                     </div>
                   </summary>
-                  <FileLoader
-                    fileInputRef={fileInputRef}
-                    onFileLoaded={setFileContent}
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="sidebar">
+                </>
+              ) : (
+                <>
                   {
                     <div
                       className="highlighted-field"
@@ -403,16 +420,16 @@ function App() {
                       </div>
                     </div>
                   }
-                  <FileLoader
-                    fileInputRef={fileInputRef}
-                    onFileLoaded={(text) => {
-                      setFileContent(text);
-                      setIfPasted(false);
-                    }}
-                  />
-                </div>
-              </>
-            )}
+                </>
+              )}
+              <FileLoader
+                fileInputRef={fileInputRef}
+                onFileLoaded={(text) => {
+                  dataSource.current = DataSource.File;
+                  resetContent(text);
+                }}
+              />
+            </div>
           </>
         )}
       </main>
