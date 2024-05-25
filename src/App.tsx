@@ -297,13 +297,13 @@ function App() {
                     <div className="note">
                       <div className="note-title">Legend</div>
                       <div className="legend">
-                        <span className="orange circle"></span> departure
+                        <span className="red circle"></span> departure
                       </div>
                       <div className="legend">
-                        <span className="green circle"></span> arrival
+                        <span className="teal circle"></span> arrival
                       </div>
                       <div className="legend">
-                        <span className="yellow circle"></span> waypoint
+                        <span className="blue circle"></span> waypoint
                       </div>
                     </div>
                   </div>

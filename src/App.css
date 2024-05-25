@@ -264,6 +264,18 @@ input[type="file"]::file-selector-button:hover {
   background-color: var(--tomtom-yellow-color);
 }
 
+.teal {
+  background-color: #6ce9cf;
+}
+
+.blue {
+  background-color: #71c3f0;
+}
+
+.red {
+  background-color: #e56d68;
+}
+
 .legend {
   display: flex;
   flex-direction: row;

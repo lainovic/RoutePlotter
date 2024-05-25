@@ -5,14 +5,12 @@ import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, error as logError } from "./logging_utils";
 import { NavigationPoint, GuidanceInstruction } from "./types";
-import {
-  tomtomDarkBlue,
-  tomtomGreen,
-  tomtomOrange,
-  tomtomYellow,
-} from "./colors";
+import { tomtomDarkBlue } from "./colors";
 import { createLine, createMarker, createPopup, cleanup } from "./map_utils";
 import { anyOf } from "./utils";
+import destinationImage from "./assets/teal-pin.png";
+import waypointImage from "./assets/blue-pin.png";
+import departureImage from "./assets/red-pin.png";
 
 export default function Map({
   routePoints,
@@ -282,21 +280,22 @@ function createRouteMarkers(routePoints: NavigationPoint[]): L.LayerGroup {
 function createWaypointMarkers(waypoints: NavigationPoint[]): L.LayerGroup {
   const markers = L.layerGroup();
   waypoints.forEach((point: NavigationPoint, index: number) => {
-    const color =
+    const image =
       index === 0
-        ? tomtomOrange // origin
+        ? departureImage
         : index === waypoints.length - 1
-        ? tomtomGreen // destination
-        : tomtomYellow; // the rest
-    const radius = 8;
+        ? destinationImage
+        : waypointImage;
     const { latitude, longitude } = point;
-    const m = L.circleMarker([latitude, longitude], {
-      radius: radius,
-      fillColor: color,
-      color: tomtomDarkBlue,
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 1,
+    const m = L.marker([latitude, longitude], {
+      icon: L.icon({
+        iconUrl: image,
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [41, 41],
+        iconAnchor: [21, 40],
+        popupAnchor: [0, -30],
+      }),
     }).bindPopup(
       `<b>${index + 1}.</b> ${latitude}, ${longitude}${
         point.speed != null ? `<br>speed: ${point.speed} m/s` : ""
