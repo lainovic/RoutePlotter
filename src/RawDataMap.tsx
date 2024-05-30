@@ -4,78 +4,51 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, logError } from "./logging_utils";
-import { NavigationPoint, GuidanceInstruction, RouteSummary } from "./types";
-import { tomtomDarkGray } from "./colors";
-import {
-  createInstructionsMarkers,
-  createIndexedPointMarkers,
-  createRouteStopMarkers,
-  Ruler,
-} from "./map_utils";
-import { secondsToHoursMinutesSeconds } from "./time_utils";
-import {
-  ParsedRoute,
-  extractInstructions,
-  extractPoints,
-  extractRouteSummary,
-  extractStops,
-} from "./route_utils";
+import { NavigationPoint } from "./types";
+import { createIndexedPointMarkers, Ruler } from "./map_utils";
+import { ParsedRawPoints } from "./raw_data_utils";
 
-class RouteLayer {
+type Segment = {
+  start: NavigationPoint;
+  end: NavigationPoint;
+};
+
+class RawDataLayer {
   points: {
     data: NavigationPoint[];
     markers: L.LayerGroup;
   };
-  instructions: {
-    data: GuidanceInstruction[];
+  segments: {
+    data: Segment[];
     markers: L.LayerGroup;
-  };
-  stops: {
-    data: NavigationPoint[];
-    markers: L.LayerGroup;
-  };
+  } | null;
+  currentPosition: {
+    point: NavigationPoint;
+    marker: L.Marker;
+  } | null;
   description: string;
-  summary: RouteSummary;
 
-  constructor(result: ParsedRoute) {
+  constructor(result: ParsedRawPoints) {
     this.points = {
-      data: extractPoints(result.route),
+      data: result.points,
       markers: L.layerGroup(),
     };
     this.points.markers = createIndexedPointMarkers(this.points.data);
-    this.instructions = {
-      data: extractInstructions(result.route),
-      markers: L.layerGroup(),
-    };
-    this.instructions.markers = createInstructionsMarkers(
-      this.instructions.data
-    );
-    this.stops = {
-      data: extractStops(result.route),
-      markers: L.layerGroup(),
-    };
-    this.stops.markers = createRouteStopMarkers(this.stops.data);
+    this.segments = null;
+    this.currentPosition = null;
     this.description = result.message.value;
-    this.summary = extractRouteSummary(result.route);
   }
 }
 
-export default function RouteMap({ result }: { result: ParsedRoute[] }) {
+export default function RawPointMap({ result }: { result: ParsedRawPoints }) {
   const map = React.useRef<L.Map | null>(null);
-
-  const [routeVisibility, setRouteVisibility] = React.useState(true);
-  const [guidanceVisibility, setGuidanceVisibility] = React.useState(false);
-  const [routestopVisibility, setRouteStopVisibility] = React.useState(true);
-
-  const routes = React.useRef<RouteLayer[]>(
-    result.map((r) => new RouteLayer(r))
-  );
-
+  const rawData = React.useRef<RawDataLayer>(new RawDataLayer(result));
+  const [rawDataVisibility, setRawDataVisibility] = React.useState(true);
   const ruler = React.useRef<Ruler>(new Ruler());
 
   React.useLayoutEffect(() => {
     const newMapInstance = L.map("map");
-    log("RouteMap created");
+    log("RawPointMap created");
 
     // Add tile layer from OpenStreetMap
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -110,113 +83,22 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
     });
 
     map.current = newMapInstance;
-    centerAroundRoutes();
+    centerAroundPoints();
 
     return () => {
       newMapInstance.remove();
-      log("RouteMap removed");
+      log("RawPointMap removed");
     };
   }, []);
 
-  // React.useEffect(() => {
-  //   log("Route points changed", routePoints);
-  //   const m = map.current;
-  //   if (m !== null) {
-  //     if (routeVisibility) m.removeLayer(routeMarkers.current);
-  //     routeMarkers.current = createRouteMarkers(routePoints);
-  //     if (routeVisibility) routeMarkers.current.addTo(m);
-  //     centerAroundRoute(m, routePoints);
-  //   }
-  // }, [routePoints]) ;
+  function centerAroundPoints() {
+    if (rawData.current.points.data.length === 0) return;
 
-  React.useEffect(() => {
-    log("Route visibility changed", routeVisibility);
-    const m = map.current;
-    if (m !== null) {
-      if (routeVisibility) {
-        routes.current.forEach((r) => r.points.markers.addTo(m));
-      } else {
-        routes.current.forEach((r) => m.removeLayer(r.points.markers));
-      }
-    }
-  }, [routeVisibility]);
-
-  // React.useEffect(() => {
-  //   log("Guidance instructions changed", guidanceInstructions);
-  //   const m = map.current;
-  //   if (m !== null) {
-  //     if (guidanceVisibility) m.removeLayer(guidanceMarkers.current);
-  //     guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
-  //     if (guidanceVisibility) guidanceMarkers.current.addTo(m);
-  //   }
-  // }, [guidanceInstructions]);
-
-  React.useEffect(() => {
-    log("Guidance visibility changed", guidanceVisibility);
-    const m = map.current;
-    if (m !== null) {
-      if (guidanceVisibility) {
-        routes.current.forEach((r) => r.instructions.markers.addTo(m));
-      } else {
-        routes.current.forEach((r) => m.removeLayer(r.instructions.markers));
-      }
-    }
-  }, [guidanceVisibility]);
-
-  // React.useEffect(() => {
-  //   log("Route stops changed", routeStops);
-  //   const m = map.current;
-  //   if (m !== null) {
-  //     if (routestopVisibility) m.removeLayer(routeStopMarkers.current);
-  //     routeStopMarkers.current = createRouteStopMarkers(routeStops);
-  //     if (routestopVisibility) routeStopMarkers.current.addTo(m);
-  //   }
-  // }, [routeStops]);
-
-  React.useEffect(() => {
-    log("Route-stop visibility changed", guidanceVisibility);
-    const m = map.current;
-    if (m !== null) {
-      if (routestopVisibility) {
-        routes.current.forEach((r) => r.stops.markers.addTo(m));
-      } else {
-        routes.current.forEach((r) => m.removeLayer(r.stops.markers));
-      }
-    }
-  }, [routestopVisibility]);
-
-  React.useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === "p" || event.key === "P") {
-        const latitude = window.prompt("Enter latitude:");
-        if (latitude === null) return;
-        const longitude = window.prompt("Enter longitude:");
-        if (longitude === null) return;
-        map.current?.setView([parseFloat(latitude), parseFloat(longitude)], 10);
-      } else if (event.key === "x" || event.key === "X") {
-        centerAroundRoutes();
-      } else if (event.key === "r" || event.key === "R") {
-        setRouteVisibility((prev) => !prev);
-      } else if (event.key === "g" || event.key === "G") {
-        setGuidanceVisibility((prev) => !prev);
-      } else if (event.key === "w" || event.key === "W") {
-        setRouteStopVisibility((prev) => !prev);
-      }
-    };
-    document.addEventListener("keypress", handleKeyPress);
-    return () => {
-      document.removeEventListener("keypress", handleKeyPress);
-    };
-  }, []);
-
-  function centerAroundRoutes() {
-    if (routes.current.length === 0) return;
-
-    const latitudes = routes.current.flatMap((route) =>
-      route.points.data.map((point) => point.latitude)
+    const latitudes = rawData.current.points.data.map(
+      (point) => point.latitude
     );
-    const longitudes = routes.current.flatMap((route) =>
-      route.points.data.map((point) => point.longitude)
+    const longitudes = rawData.current.points.data.map(
+      (point) => point.longitude
     );
 
     const minLatitude = Math.min(...latitudes);
@@ -238,12 +120,125 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
     ]);
   }
 
+  // React.useEffect(() => {
+  //   log("Route points changed", routePoints);
+  //   const m = map.current;
+  //   if (m !== null) {
+  //     if (routeVisibility) m.removeLayer(routeMarkers.current);
+  //     routeMarkers.current = createRouteMarkers(routePoints);
+  //     if (routeVisibility) routeMarkers.current.addTo(m);
+  //     centerAroundRoute(m, routePoints);
+  //   }
+  // }, [routePoints]) ;
+
+  React.useEffect(() => {
+    log("Raw data visibility changed", rawDataVisibility);
+    const m = map.current;
+    if (m !== null) {
+      if (rawDataVisibility) {
+        rawData.current.points.markers.addTo(m);
+      } else {
+        m.removeLayer(rawData.current.points.markers);
+      }
+    }
+  }, [rawDataVisibility]);
+
+  // React.useEffect(() => {
+  //   log("Guidance instructions changed", guidanceInstructions);
+  //   const m = map.current;
+  //   if (m !== null) {
+  //     if (guidanceVisibility) m.removeLayer(guidanceMarkers.current);
+  //     guidanceMarkers.current = createGuidanceMarkers(guidanceInstructions);
+  //     if (guidanceVisibility) guidanceMarkers.current.addTo(m);
+  //   }
+  // }, [guidanceInstructions]);
+
+  // React.useEffect(() => {
+  //   log("Guidance visibility changed", guidanceVisibility);
+  //   const m = map.current;
+  //   if (m !== null) {
+  //     if (guidanceVisibility) {
+  //       routes.current.forEach((r) => r.instructions.markers.addTo(m));
+  //     } else {
+  //       routes.current.forEach((r) => m.removeLayer(r.instructions.markers));
+  //     }
+  //   }
+  // }, [guidanceVisibility]);
+
+  // React.useEffect(() => {
+  //   log("Route stops changed", routeStops);
+  //   const m = map.current;
+  //   if (m !== null) {
+  //     if (routestopVisibility) m.removeLayer(routeStopMarkers.current);
+  //     routeStopMarkers.current = createRouteStopMarkers(routeStops);
+  //     if (routestopVisibility) routeStopMarkers.current.addTo(m);
+  //   }
+  // }, [routeStops]);
+
+  // React.useEffect(() => {
+  //   log("Route-stop visibility changed", guidanceVisibility);
+  //   const m = map.current;
+  //   if (m !== null) {
+  //     if (routestopVisibility) {
+  //       routes.current.forEach((r) => r.stops.markers.addTo(m));
+  //     } else {
+  //       routes.current.forEach((r) => m.removeLayer(r.stops.markers));
+  //     }
+  //   }
+  // }, [routestopVisibility]);
+
+  // React.useEffect(() => {
+  //   const handleKeyPress = (event: KeyboardEvent) => {
+  //     if (event.key === "p" || event.key === "P") {
+  //       const latitude = window.prompt("Enter latitude:");
+  //       if (latitude === null) return;
+  //       const longitude = window.prompt("Enter longitude:");
+  //       if (longitude === null) return;
+  //       map.current?.setView([parseFloat(latitude), parseFloat(longitude)], 10);
+  //     } else if (event.key === "x" || event.key === "X") {
+  //       centerAroundRoutes();
+  //     } else if (event.key === "r" || event.key === "R") {
+  //       setRouteVisibility((prev) => !prev);
+  //     } else if (event.key === "g" || event.key === "G") {
+  //       setGuidanceVisibility((prev) => !prev);
+  //     } else if (event.key === "w" || event.key === "W") {
+  //       setRouteStopVisibility((prev) => !prev);
+  //     }
+  //   };
+  //   document.addEventListener("keypress", handleKeyPress);
+  //   return () => {
+  //     document.removeEventListener("keypress", handleKeyPress);
+  //   };
+  // }, []);
+
+  // function centerAroundRoutes() {
+  //   if (routes.current.length === 0) return;
+
+  //   const latitudes = routes.current.flatMap((route) =>
+  //     route.points.data.map((point) => point.latitude)
+  //   );
+  //   const longitudes = routes.current.flatMap((route) =>
+  //     route.points.data.map((point) => point.longitude)
+  //   );
+
+  //   const minLatitude = Math.min(...latitudes);
+  //   const maxLatitude = Math.max(...latitudes);
+  //   const minLongitude = Math.min(...longitudes);
+  //   const maxLongitude = Math.max(...longitudes);
+  //   const paddingFactor = 0;
+
+  //   map.current?.fitBounds([
+  //     [minLatitude - paddingFactor, minLongitude - paddingFactor],
+  //     [maxLatitude + paddingFactor, maxLongitude + paddingFactor],
+  //   ]);
+  // }
+
   log("Rendering:");
-  log("- routes:", result);
+  log("- raw data:", result);
   return (
     <div className="map-container">
       <div className="sidebar">
-        {routes.current.map((route) => (
+        {/* {routes.current.map((route) => (
           <>
             <div className="checkboxes">
               {route.points.data.length > 0 && (
@@ -311,7 +306,7 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
               </div>
             </div>
           </>
-        ))}
+        ))} */}
       </div>
       <div id="map"></div>
       <div className="sidebar">

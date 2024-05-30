@@ -2,41 +2,27 @@ import React from "react";
 import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import PlotMap from "./PlotMap";
 import RouteMap from "./RouteMap";
+import PlotMap from "./PlotMap";
 import FileLoader from "./FileLoader";
-import { secondsToHoursMinutesSeconds } from "./time_utils";
-import {
-  extractPoints,
-  extractGuidanceInstructions,
-  extractRoutes,
-  extractRouteSummary,
-  extractWaypoints,
-} from "./route_utils";
-import {
-  NavigationPoint,
-  GuidanceInstruction,
-  Summary,
-  Message,
-  Route,
-  Maybe,
-  ApplicationError,
-} from "./types";
+import { parseRoutes, ParsedRoute } from "./route_utils";
+import { Message } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
-import { log } from "./logging_utils";
-import { tomtomDarkGray } from "./colors";
-import KeyInput from "./KeyInput";
-import Button from "./Button";
+import { log, logError } from "./logging_utils";
+import MainPage from "./MainPage";
+import { ParsedRawPoints, parseRawPoints } from "./raw_data_utils";
+import { ParsedLogfile, parseLogfile } from "./logfile_utils";
+import RawPointMap from "./RawDataMap";
 
-const ROUTE_CREATOR_MODE = "route-creator";
-const ROUTE_PLOTTER_MODE = "route-plotter";
+enum AppMode {
+  RouteCreator = "route-creator",
+  RoutePlotter = "route-plotter",
+}
 
 enum DataSource {
   File = "file",
   Clipboard = "clipboard",
 }
-
-type MaybeMessage = Maybe<ApplicationError, Message | null>;
 
 /**
  * The main React component for the application.
@@ -45,32 +31,42 @@ type MaybeMessage = Maybe<ApplicationError, Message | null>;
  * The component renders different views based on the active tab (route plotter or route creator).
  */
 function App() {
-  const [fileContent, setFileContent] = React.useState<string>("");
-  const [routePoints, setRoutePoints] = React.useState<NavigationPoint[]>([]);
-  const [guidanceInstructions, setGuidanceInstructions] = React.useState<
-    GuidanceInstruction[]
-  >([]);
-  const [waypoints, setWaypoints] = React.useState<NavigationPoint[]>([]);
-  const [routeSummary, setRouteSummary] = React.useState<Summary | null>(null);
-  const [failMessage, setFailMessage] = React.useState<Message | null>(null);
+  const [inputData, setInputData] = React.useState<string>("");
+
+  const [routes, setRoutes] = React.useState<ParsedRoute[]>([]);
+  const [rawPoints, setRawPoints] = React.useState<ParsedRawPoints | null>(
+    null
+  );
+  const [logFile, setLogfile] = React.useState<ParsedLogfile | null>(null);
+
+  const [failureMessage, setFailureMessage] = React.useState<Message | null>(
+    null
+  );
   const [successMessage, setSuccessMessage] = React.useState<Message | null>(
     null
   );
+
   const [isLoading, setLoading] = React.useState<boolean>(false);
 
-  const [activeTab, setActiveTab] = React.useState<string>(ROUTE_PLOTTER_MODE);
+  const [activeTab, setActiveTab] = React.useState<AppMode>(
+    AppMode.RoutePlotter
+  );
 
-  const [replaceData, setReplaceData] = React.useState<boolean>(true);
+  const [shouldUpdateData, setShouldUpdateData] =
+    React.useState<boolean>(false);
 
-  const [ifPasted, setPasted] = React.useState<boolean>(false);
+  // const [ifRaw, setRaw] = React.useState<boolean>(false);
+  // const [ifLog, setLog] = React.useState<boolean>(false);
 
   const fileInputRef = React.useRef<any>(null);
 
-  const dataSource = React.useRef<DataSource | null>(null);
+  const dataSource = React.useRef<DataSource>(DataSource.File);
 
-  const resetContent = (content: string) => {
-    setFileContent(content);
-    setPasted(false);
+  const resetInput = (content: string) => {
+    setRoutes([]);
+    setRawPoints(null);
+    setLogfile(null);
+    setInputData(content);
   };
 
   const handlePaste = (event: React.ClipboardEvent) => {
@@ -78,11 +74,12 @@ function App() {
     const pastedText = event.clipboardData.getData("text");
     dataSource.current = DataSource.Clipboard;
 
-    const updatedContent = replaceData
-      ? pastedText
-      : `${fileContent} ${pastedText}`;
+    const updatedInput = shouldUpdateData
+      ? `${inputData} ${pastedText}` // TODO: this doesn't work if the inputData got invalid and
+      : // hence all subsequent updates fail
+        pastedText;
 
-    resetContent(updatedContent);
+    resetInput(updatedInput);
   };
 
   const handleDrop = (event: React.DragEvent) => {
@@ -93,90 +90,68 @@ function App() {
     dataSource.current = DataSource.File;
     reader.onload = () => {
       const content = reader.result as string;
-      resetContent(content);
+      resetInput(content);
     };
     reader.readAsText(file);
   };
 
   React.useEffect(() => {
-    if (fileContent === "") return;
+    if (inputData === "") return;
     setLoading(true);
     setTimeout(() => {
-      extractRoutes(fileContent)
-        .ifSuccess((result) => {
-          setSuccessMessage(result.message);
+      parseRoutes(inputData)
+        .ifSuccess((maybeRoutes) => {
+          if (maybeRoutes.result.length === 0) {
+            setFailureMessage(maybeRoutes.message);
+          } else {
+            setSuccessMessage(maybeRoutes.message);
+            setRoutes(maybeRoutes.result);
+          }
+        })
+        .ifFailure((error) => {
+          logError(error.value);
           setTimeout(() => {
-            handleExtractedRoutes(result.routes)
-              .ifSuccess((message) => {
-                setSuccessMessage(message);
-                if (dataSource.current === DataSource.Clipboard) {
-                  setPasted(true);
+            parseRawPoints(inputData)
+              .ifSuccess((maybePoints) => {
+                if (maybePoints.result.points.length === 0) {
+                  setFailureMessage(maybePoints.message);
+                } else {
+                  setSuccessMessage(maybePoints.message);
+                  setRawPoints(maybePoints.result);
                 }
               })
               .ifFailure((error) => {
-                log("Failed to handle the route extraction", error);
-                setFailMessage({ value: error.message });
-              })
-              .finally(() => {
-                log("Finished handling extracted routes");
+                logError(error.value);
+                setTimeout(() => {
+                  parseLogfile(inputData)
+                    .ifSuccess((maybeLogfile) => {
+                      if (maybeLogfile.result.log.length === 0) {
+                        setFailureMessage(maybeLogfile.message);
+                      } else {
+                        setSuccessMessage(maybeLogfile.message);
+                        setLogfile(maybeLogfile.result);
+                      }
+                    })
+                    .ifFailure((error) => {
+                      logError(error.value);
+                      logError("Invalid input data.", inputData);
+                      setFailureMessage({ value: `Invalid input data.` });
+                    });
+                });
               });
           });
-        })
-        .ifFailure((error) => {
-          log("Failed to extract routes", error);
-          setFailMessage({ value: error.message });
         })
         .finally(() => {
           setLoading(false);
         });
     });
-  }, [fileContent]);
-
-  /**
-   * Handles the extraction of routes from a given array of routes.
-   *
-   * If no valid routes are found, a failure message is returned.
-   * Otherwise, the first route is loaded, and its points, guidance instructions, waypoints,
-   * and route summary are extracted and set in the component state.
-   * If any errors occur during the extraction process, a failure message is set in the component state.
-   *
-   * @param routes - An array of routes to be processed.
-   * @returns A `Maybe` object containing a success or failure message.
-   */
-  const handleExtractedRoutes = (routes: Route[]): MaybeMessage => {
-    if (routes.length === 0) {
-      return Maybe.failure({ message: "No valid routes found." });
-    }
-
-    log("Routes extracted:", routes);
-    const route = routes[0];
-    log("Only the first route is loaded:", route);
-
-    const extractPointsResult = extractPoints(route);
-    if (extractPointsResult.isFailure()) {
-      log("Failed to extract routes:", extractPointsResult.error!!.message);
-      return Maybe.failure(extractPointsResult.error!!);
-    }
-
-    const points = extractPointsResult.result!!.points;
-    if (points.length === 0) {
-      return Maybe.failure({ message: "No valid points found." });
-    }
-
-    log(extractPointsResult.result!!.message.value, points);
-    setRoutePoints(points);
-    setGuidanceInstructions(extractGuidanceInstructions(route));
-    setWaypoints(extractWaypoints(route));
-    setRouteSummary(extractRouteSummary(route));
-
-    return Maybe.success(extractPointsResult.result!!.message);
-  };
+  }, [inputData]);
 
   React.useEffect(() => {
-    if (failMessage === null) return;
-    if (failMessage.value === "") return;
-    toast.error(failMessage.value);
-  }, [failMessage]);
+    if (failureMessage === null) return;
+    if (failureMessage.value === "") return;
+    toast.error(failureMessage.value);
+  }, [failureMessage]);
 
   React.useEffect(() => {
     if (successMessage === null) return;
@@ -187,7 +162,7 @@ function App() {
   return (
     <div
       className="App"
-      {...(activeTab === ROUTE_PLOTTER_MODE && {
+      {...(activeTab === AppMode.RoutePlotter && {
         onPaste: handlePaste,
         onDrop: handleDrop,
         onDragOver: (event: React.DragEvent) => {
@@ -203,10 +178,10 @@ function App() {
           <li>
             <div
               className={
-                activeTab === ROUTE_PLOTTER_MODE ? "tab active" : "tab"
+                activeTab === AppMode.RoutePlotter ? "tab active" : "tab"
               }
               onClick={() => {
-                setActiveTab(ROUTE_PLOTTER_MODE);
+                setActiveTab(AppMode.RoutePlotter);
               }}
             >
               plotter
@@ -215,10 +190,10 @@ function App() {
           <li>
             <div
               className={
-                activeTab === ROUTE_CREATOR_MODE ? "tab active" : "tab"
+                activeTab === AppMode.RouteCreator ? "tab active" : "tab"
               }
               onClick={() => {
-                setActiveTab(ROUTE_CREATOR_MODE);
+                setActiveTab(AppMode.RouteCreator);
               }}
             >
               creator
@@ -232,215 +207,38 @@ function App() {
         </div>
       )}
       <main>
-        {activeTab === ROUTE_CREATOR_MODE ? (
-          // Route Creator
-          <>
-            <div id="map-container">
-              <RouteMap />
-            </div>
-            <div className="sidebar">
-              <div className="highlighted-field">
-                <div className="note">
-                  <div className="note-title">Inputs</div>
-                  <KeyInput label="TomTom API key" />
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                }}
-              >
-                <Button
-                  text="Generate route"
-                  onClick={() => {
-                    alert("Not implemented yet");
-                  }}
-                />
-              </div>
-              <div className="highlighted-field">
-                <div className="note">
-                  <div className="note-title">Help</div>
-                  You can drag the points around. Press left click on the map to
-                  add a point. Press right click on the point to remove it.
-                  <br />
-                  Press <span className="key">C</span> to clear all elements.
-                  <br />
-                  Press <span className="key">X</span> to center the map around
-                  the route.
-                  <br />
-                  Press <span className="key">P</span> to enter the coordinates
-                  of a point and to add it to the route.
-                </div>
-              </div>
-            </div>
-          </>
+        {activeTab === AppMode.RouteCreator ? (
+          <PlotMap />
         ) : (
-          // Route Plotter
           <>
-            <div id="map-container">
-              <PlotMap
-                routePoints={routePoints}
-                guidanceInstructions={guidanceInstructions}
-                waypoints={waypoints}
-              />
-            </div>
-            <div className="sidebar">
-              {routePoints.length > 0 ? (
-                <>
-                  {ifPasted && (
-                    <>
-                      <div className="checkbox-container">
-                        <input
-                          type="checkbox"
-                          id="replace-data"
-                          name="replace-data"
-                          checked={replaceData}
-                          onChange={() => setReplaceData(!replaceData)}
-                        />
-                        <label htmlFor="replace-data">
-                          Replace current data
-                        </label>
-                      </div>
-                      <div className="note">
-                        <div className="note-content">
-                          Check the box above to replace the current data with
-                          the content in your clipboard. Uncheck it to append
-                          the clipboard data to the existing data.
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  <div className="highlighted-field">
-                    <div className="note">
-                      <div className="note-title">Legend</div>
-                      <div className="legend">
-                        <span className="red circle"></span> departure
-                      </div>
-                      <div className="legend">
-                        <span className="teal circle"></span> arrival
-                      </div>
-                      <div className="legend">
-                        <span className="blue circle"></span> waypoint
-                      </div>
-                    </div>
-                  </div>
-                  <div className="highlighted-field">
-                    <div className="note">
-                      <div className="note-title">Help</div>
-                      Click once to add a point, then click again to display the
-                      Haversine distance between them.
-                      <br />
-                      <br />
-                      Press <span className="key">P</span> to position the map
-                      on a specific latitude and longitude.
-                      <br />
-                      Press <span className="key">X</span> to center the map
-                      around the route.
-                      <br />
-                      Press <span className="key">R</span> to toggle the
-                      visibility of the route.
-                      <br />
-                      Press <span className="key">G</span> to toggle the
-                      visibility of guidance instructions.
-                      <br />
-                      Press <span className="key">W</span> to toggle the
-                      visibility of waypoints.
-                      <br />
-                      Right click on the map to copy the latitude and longitude
-                      of a point to the clipboard.
-                      <br />
-                      Paste the content, drop the file again, or click the
-                      button below to upload a new file and plot a new route.
-                    </div>
-                  </div>
-
-                  <summary className="highlighted-field">
-                    <div className="note">
-                      <div className="note-title">Summary</div>
-                      <p>
-                        Size:{" "}
-                        <span style={{ color: tomtomDarkGray }}>
-                          {routePoints.length} points
-                        </span>
-                      </p>
-                      {routeSummary && (
-                        <>
-                          <p>
-                            Distance:{" "}
-                            <span style={{ color: tomtomDarkGray }}>
-                              {routeSummary.lengthInMeters}
-                              {` meters`}
-                            </span>
-                          </p>
-                          <p>
-                            Duration:{" "}
-                            <span style={{ color: tomtomDarkGray }}>
-                              {secondsToHoursMinutesSeconds(
-                                routeSummary.travelTimeInSeconds || 0
-                              )}
-                            </span>
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </summary>
-                </>
-              ) : (
-                <>
-                  {
-                    <div className="highlighted-field">
-                      <div className="note">
-                        <div className="note-title">Help</div>
-                        <ul>
-                          <li>
-                            Click the button below to upload a file containing
-                            route data.
-                            <br />
-                            The file can be in TTP or JSON format coming from
-                            the TomTom Routing API.
-                          </li>
-                          <li>Drag and drop a file to upload it.</li>
-                          <li>
-                            Paste the coordinates directly. The coordinates need
-                            to be separated by white spaces. The latitude and
-                            longitude values need to be separated by a comma, or
-                            a space, or a combination of both. The following
-                            formats are accepted:
-                            <div
-                              style={{
-                                textAlign: "center",
-                                display: "flex",
-                                flexDirection: "column",
-                                font: "monospace",
-                              }}
-                            >
-                              <code>Geopoint(latitude, longitude)</code>
-                              <code>
-                                Geopoint(latitude=value, longitude=value)
-                              </code>
-                              <code>latitude, longitude</code>
-                              <code>latitude=value, longitude=value</code>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  }
-                </>
-              )}
-              <FileLoader
-                fileInputRef={fileInputRef}
-                onFileLoaded={(text) => {
-                  dataSource.current = DataSource.File;
-                  resetContent(text);
-                }}
-              />
-            </div>
+            {routes.length > 0 ? (
+              <RouteMap result={routes} />
+            ) : (
+              <>
+                {rawPoints && rawPoints.points.length > 0 ? (
+                  <RawPointMap result={rawPoints} />
+                ) : (
+                  <>
+                    {logFile && logFile.log.length > 0 ? (
+                      // <LogMap log={logFile} />
+                      <div>TODO: LogMap not implemented yet</div>
+                    ) : (
+                      <MainPage />
+                    )}
+                  </>
+                )}
+              </>
+            )}
           </>
         )}
       </main>
+      <FileLoader
+        fileInputRef={fileInputRef}
+        onFileLoaded={(text) => {
+          dataSource.current = DataSource.File;
+          resetInput(text);
+        }}
+      />
       <ToastContainer
         position="top-center"
         hideProgressBar

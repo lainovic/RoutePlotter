@@ -7,17 +7,24 @@ export interface NavigationPoint {
   speed: number | any | null;
 }
 
+export const NullPoint: NavigationPoint = {
+  timestamp: null,
+  latitude: null,
+  longitude: null,
+  speed: null,
+};
+
 export interface Route {
   legs: {
     points: NavigationPoint[];
   }[];
-  summary: Summary;
+  summary: RouteSummary;
   guidance: {
     instructions: GuidanceInstruction[];
   };
 }
 
-export interface Summary {
+export interface RouteSummary {
   lengthInMeters: number;
   travelTimeInSeconds: number;
 }
@@ -38,6 +45,11 @@ export interface RoutePath {
 
 export interface Message {
   value: string;
+}
+
+export enum DataType {
+  Points = "points",
+  Segments = "segments",
 }
 
 /**
@@ -114,3 +126,13 @@ export class Maybe<E, T> {
 export interface ApplicationError {
   message: string;
 }
+
+export type MaybeBoolean = Maybe<ApplicationError, boolean>;
+
+export type ParseResult<T> = Maybe<
+  Message,
+  {
+    result: T;
+    message: Message;
+  }
+>;
