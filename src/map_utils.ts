@@ -1,6 +1,6 @@
 import L from "leaflet";
 
-import { tomTomRed, tomtomDarkBlue } from "./colors";
+import { tomTomRed } from "./colors";
 import { NavigationPoint, GuidanceInstruction } from "./types";
 
 import destinationImage from "./assets/teal-pin.png";
@@ -58,8 +58,8 @@ export function cleanup(...refs: React.MutableRefObject<any>[]) {
 
 export function createIndexedPointMarkers(
   routePoints: NavigationPoint[]
-): L.LayerGroup {
-  const markers = L.layerGroup();
+): L.MarkerClusterGroup {
+  const markers = window.L.markerClusterGroup();
   routePoints.forEach((point: NavigationPoint, index: number) => {
     const { latitude, longitude } = point;
     const m = createMarker(

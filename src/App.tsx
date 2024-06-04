@@ -9,7 +9,7 @@ import { parseRoutes, ParsedRoute } from "./route_utils";
 import { Message } from "./types";
 import tomtomLogo from "./assets/tomtom-logo.png";
 import { log, logError } from "./logging_utils";
-import MainPage from "./MainPage";
+import BrowseMap from "./BrowseMap";
 import { ParsedRawPoints, parseRawPoints } from "./raw_data_utils";
 import { ParsedLogfile, parseLogfile } from "./logfile_utils";
 import RawPointMap from "./RawDataMap";
@@ -54,9 +54,6 @@ function App() {
 
   const [shouldUpdateData, setShouldUpdateData] =
     React.useState<boolean>(false);
-
-  // const [ifRaw, setRaw] = React.useState<boolean>(false);
-  // const [ifLog, setLog] = React.useState<boolean>(false);
 
   const fileInputRef = React.useRef<any>(null);
 
@@ -223,7 +220,7 @@ function App() {
                       // <LogMap log={logFile} />
                       <div>TODO: LogMap not implemented yet</div>
                     ) : (
-                      <MainPage />
+                      <BrowseMap />
                     )}
                   </>
                 )}
@@ -232,24 +229,26 @@ function App() {
           </>
         )}
       </main>
-      <FileLoader
-        fileInputRef={fileInputRef}
-        onFileLoaded={(text) => {
-          dataSource.current = DataSource.File;
-          resetInput(text);
-        }}
-      />
-      <ToastContainer
-        position="top-center"
-        hideProgressBar
-        autoClose={1500}
-        closeOnClick
-        pauseOnHover
-        style={{
-          height: "50px",
-          textAlign: "center",
-        }}
-      />
+      <footer>
+        <FileLoader
+          fileInputRef={fileInputRef}
+          onFileLoaded={(text) => {
+            dataSource.current = DataSource.File;
+            resetInput(text);
+          }}
+        />
+        <ToastContainer
+          position="top-center"
+          hideProgressBar
+          autoClose={1500}
+          closeOnClick
+          pauseOnHover
+          style={{
+            height: "50px",
+            textAlign: "center",
+          }}
+        />
+      </footer>
     </div>
   );
 }

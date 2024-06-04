@@ -4,7 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, logError } from "./logging_utils";
 import { createMarker, RouteMarkerNode, createLineFromTo } from "./map_utils";
-import KeyInput from "./KeyInput";
+import CachedInput from "./CachedInput";
 import Button from "./Button";
 
 export default function PlotMap() {
@@ -210,7 +210,7 @@ export default function PlotMap() {
         <div className="highlighted-field">
           <div className="note">
             <div className="note-title">Inputs</div>
-            <KeyInput label="TomTom API key" />
+            <CachedInput label="TomTom API key" />
           </div>
         </div>
         <div

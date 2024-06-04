@@ -3,6 +3,8 @@ import L from "leaflet";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
+import "leaflet/dist/leaflet";
+import "leaflet.markercluster";
 import { log, logError } from "./logging_utils";
 import { NavigationPoint, GuidanceInstruction, RouteSummary } from "./types";
 import { tomtomDarkGray } from "./colors";
@@ -24,7 +26,7 @@ import {
 class RouteLayer {
   points: {
     data: NavigationPoint[];
-    markers: L.LayerGroup;
+    markers: L.MarkerClusterGroup;
   };
   instructions: {
     data: GuidanceInstruction[];
@@ -40,7 +42,7 @@ class RouteLayer {
   constructor(result: ParsedRoute) {
     this.points = {
       data: extractPoints(result.route),
-      markers: L.layerGroup(),
+      markers: window.L.markerClusterGroup(),
     };
     this.points.markers = createIndexedPointMarkers(this.points.data);
     this.instructions = {
@@ -63,9 +65,15 @@ class RouteLayer {
 export default function RouteMap({ result }: { result: ParsedRoute[] }) {
   const map = React.useRef<L.Map | null>(null);
 
-  const [routeVisibility, setRouteVisibility] = React.useState(true);
-  const [guidanceVisibility, setGuidanceVisibility] = React.useState(false);
-  const [routestopVisibility, setRouteStopVisibility] = React.useState(true);
+  const [routeVisibility, setRouteVisibility] = React.useState<
+    Map<number, boolean>
+  >(new Map<number, boolean>());
+  const [guidanceVisibility, setGuidanceVisibility] = React.useState<
+    Map<number, boolean>
+  >(new Map<number, boolean>());
+  const [routestopVisibility, setRouteStopVisibility] = React.useState<
+    Map<number, boolean>
+  >(new Map<number, boolean>());
 
   const routes = React.useRef<RouteLayer[]>(
     result.map((r) => new RouteLayer(r))
@@ -133,11 +141,10 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
     log("Route visibility changed", routeVisibility);
     const m = map.current;
     if (m !== null) {
-      if (routeVisibility) {
-        routes.current.forEach((r) => r.points.markers.addTo(m));
-      } else {
-        routes.current.forEach((r) => m.removeLayer(r.points.markers));
-      }
+      routes.current.forEach((r, idx) => {
+        if (routeVisibility.get(idx)) r.points.markers.addTo(m);
+        else m.removeLayer(r.points.markers);
+      });
     }
   }, [routeVisibility]);
 
@@ -196,11 +203,11 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
       } else if (event.key === "x" || event.key === "X") {
         centerAroundRoutes();
       } else if (event.key === "r" || event.key === "R") {
-        setRouteVisibility((prev) => !prev);
+        // setRouteVisibility((prev) => !prev);
       } else if (event.key === "g" || event.key === "G") {
-        setGuidanceVisibility((prev) => !prev);
+        // setGuidanceVisibility((prev) => !prev);
       } else if (event.key === "w" || event.key === "W") {
-        setRouteStopVisibility((prev) => !prev);
+        // setRouteStopVisibility((prev) => !prev);
       }
     };
     document.addEventListener("keypress", handleKeyPress);
@@ -243,16 +250,21 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
   return (
     <div className="map-container">
       <div className="sidebar">
-        {routes.current.map((route) => (
-          <>
+        {routes.current.map((route, index) => (
+          <React.Fragment key={`marker-${index}`}>
+            <div className="note-title">{route.description}</div>
             <div className="checkboxes">
               {route.points.data.length > 0 && (
                 <div className="checkbox-container">
                   <input
                     type="checkbox"
                     id="routePoints"
-                    checked={routeVisibility}
-                    onChange={(e) => setRouteVisibility(e.target.checked)}
+                    checked={routeVisibility.get(index)}
+                    onChange={(e) =>
+                      setRouteVisibility(
+                        (prev) => new Map(prev.set(index, e.target.checked))
+                      )
+                    }
                   />
                   <label htmlFor="routePoints">Route points</label>
                 </div>
@@ -262,8 +274,12 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
                   <input
                     type="checkbox"
                     id="instructions"
-                    checked={guidanceVisibility}
-                    onChange={(e) => setGuidanceVisibility(e.target.checked)}
+                    checked={guidanceVisibility.get(index)}
+                    onChange={(e) =>
+                      setGuidanceVisibility(
+                        (prev) => new Map(prev.set(index, e.target.checked))
+                      )
+                    }
                   />
                   <label htmlFor="instructions">Guidance instructions</label>
                 </div>
@@ -273,8 +289,12 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
                   <input
                     type="checkbox"
                     id=""
-                    checked={routestopVisibility}
-                    onChange={(e) => setRouteStopVisibility(e.target.checked)}
+                    checked={routestopVisibility.get(index)}
+                    onChange={(e) =>
+                      setRouteStopVisibility(
+                        (prev) => new Map(prev.set(index, e.target.checked))
+                      )
+                    }
                   />
                   <label htmlFor="instructions">Waypoints</label>
                 </div>
@@ -310,7 +330,7 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
                 )}
               </div>
             </div>
-          </>
+          </React.Fragment>
         ))}
       </div>
       <div id="map"></div>
