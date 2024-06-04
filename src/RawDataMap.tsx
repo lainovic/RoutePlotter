@@ -5,7 +5,11 @@ import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import { log, logError } from "./logging_utils";
 import { NavigationPoint } from "./types";
-import { createIndexedPointMarkers, Ruler } from "./map_utils";
+import {
+  createIndexedPointClusters,
+  createIndexedPointMarkers,
+  Ruler,
+} from "./map_utils";
 import { ParsedRawPoints } from "./raw_data_utils";
 
 type Segment = {
@@ -47,7 +51,7 @@ export default function RawPointMap({ result }: { result: ParsedRawPoints }) {
   const ruler = React.useRef<Ruler>(new Ruler());
 
   React.useLayoutEffect(() => {
-    const newMapInstance = L.map("map");
+    const newMapInstance = L.map("raw-points-map");
     log("RawPointMap created");
 
     // Add tile layer from OpenStreetMap
@@ -236,9 +240,9 @@ export default function RawPointMap({ result }: { result: ParsedRawPoints }) {
   log("Rendering:");
   log("- raw data:", result);
   return (
-    <div className="map-container">
-      <div className="sidebar">
-        {/* {routes.current.map((route) => (
+    <>
+      {/* <div className="sidebar"> */}
+      {/* {routes.current.map((route) => (
           <>
             <div className="checkboxes">
               {route.points.data.length > 0 && (
@@ -307,8 +311,8 @@ export default function RawPointMap({ result }: { result: ParsedRawPoints }) {
             </div>
           </>
         ))} */}
-      </div>
-      <div id="map"></div>
+      {/* </div> */}
+      <div id="raw-points-map"></div>
       <div className="sidebar">
         <div className="highlighted-field">
           <div className="note">
@@ -355,7 +359,7 @@ export default function RawPointMap({ result }: { result: ParsedRawPoints }) {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

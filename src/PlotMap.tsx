@@ -6,6 +6,7 @@ import { log, logError } from "./logging_utils";
 import { createMarker, RouteMarkerNode, createLineFromTo } from "./map_utils";
 import CachedInput from "./CachedInput";
 import Button from "./Button";
+import { TileLayerProvider, tileProviderLocalStorageKeys } from "./utils";
 
 export default function PlotMap() {
   const map = React.useRef<L.Map | null>(null);
@@ -210,7 +211,13 @@ export default function PlotMap() {
         <div className="highlighted-field">
           <div className="note">
             <div className="note-title">Inputs</div>
-            <CachedInput label="TomTom API key" />
+            <CachedInput
+              label="TomTom API key"
+              cacheKey={
+                tileProviderLocalStorageKeys.get(TileLayerProvider.TomTom)!!
+              }
+              onValueChange={() => {}}
+            />
           </div>
         </div>
         <div

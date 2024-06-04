@@ -6,3 +6,15 @@
 export function anyOf(arrays: any[]) {
   return arrays.some((array) => array.length > 0);
 }
+
+/**
+ * Represents the available tile layer providers for the map.
+ */
+export enum TileLayerProvider {
+  OpenStreetMap = "OpenStreetMap",
+  GoogleMap = "Google Maps",
+  TomTom = "TomTom Genesis",
+}
+export const tileProviderLocalStorageKeys = new Map<TileLayerProvider, string>([
+  [TileLayerProvider.TomTom, "tt_api_key"],
+]);

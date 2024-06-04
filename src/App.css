@@ -122,11 +122,23 @@ main > h1 {
   border-radius: 10px;
 }
 
+#raw-points-map {
+  height: 600px;
+  width: 60%;
+  border-radius: 10px;
+}
+
+#route-map {
+  height: 600px;
+  width: 50%;
+  border-radius: 10px;
+}
+
 .highlighted-field {
   border-left: 2px solid var(--tomtom-red-color);
   padding-left: 10px;
   color: var(--tomtom-dark-gray-color);
-  width: 30%;
+  /* width: 30%; */
 }
 
 .highlighted-field ul {
@@ -362,5 +374,5 @@ select {
   border-radius: 0.5rem;
   border: 1px solid var(--tomtom-red-color);
   background-color: var(--tomtom-white-color);
-  margin-bottom: 1rem;
+  margin: 0.5rem 1rem 0.5rem 0;
 }

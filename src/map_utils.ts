@@ -56,10 +56,31 @@ export function cleanup(...refs: React.MutableRefObject<any>[]) {
   });
 }
 
-export function createIndexedPointMarkers(
+export function createIndexedPointClusters(
   routePoints: NavigationPoint[]
 ): L.MarkerClusterGroup {
   const markers = window.L.markerClusterGroup();
+  routePoints.forEach((point: NavigationPoint, index: number) => {
+    const { latitude, longitude } = point;
+    const m = createMarker(
+      latitude,
+      longitude,
+      createIndexedIcon(index),
+      false
+    ).bindPopup(
+      `${latitude}, ${longitude}${
+        point.speed != null ? `<br>speed: ${point.speed} m/s` : ""
+      }`
+    );
+    markers.addLayer(m);
+  });
+  return markers;
+}
+
+export function createIndexedPointMarkers(
+  routePoints: NavigationPoint[]
+): L.LayerGroup {
+  const markers = L.layerGroup();
   routePoints.forEach((point: NavigationPoint, index: number) => {
     const { latitude, longitude } = point;
     const m = createMarker(

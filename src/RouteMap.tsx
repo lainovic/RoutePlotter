@@ -1,5 +1,6 @@
 import React from "react";
 import L from "leaflet";
+import "leaflet.markercluster";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
@@ -10,7 +11,7 @@ import { NavigationPoint, GuidanceInstruction, RouteSummary } from "./types";
 import { tomtomDarkGray } from "./colors";
 import {
   createInstructionsMarkers,
-  createIndexedPointMarkers,
+  createIndexedPointClusters,
   createRouteStopMarkers,
   Ruler,
 } from "./map_utils";
@@ -44,7 +45,7 @@ class RouteLayer {
       data: extractPoints(result.route),
       markers: window.L.markerClusterGroup(),
     };
-    this.points.markers = createIndexedPointMarkers(this.points.data);
+    this.points.markers = createIndexedPointClusters(this.points.data);
     this.instructions = {
       data: extractInstructions(result.route),
       markers: L.layerGroup(),
@@ -82,7 +83,7 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
   const ruler = React.useRef<Ruler>(new Ruler());
 
   React.useLayoutEffect(() => {
-    const newMapInstance = L.map("map");
+    const newMapInstance = L.map("route-map");
     log("RouteMap created");
 
     // Add tile layer from OpenStreetMap
@@ -142,8 +143,10 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
     const m = map.current;
     if (m !== null) {
       routes.current.forEach((r, idx) => {
-        if (routeVisibility.get(idx)) r.points.markers.addTo(m);
-        else m.removeLayer(r.points.markers);
+        if (routeVisibility.get(idx)) {
+          log("Adding route markers to map:", r.points.markers);
+          r.points.markers.addTo(m);
+        } else m.removeLayer(r.points.markers);
       });
     }
   }, [routeVisibility]);
@@ -248,7 +251,7 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
   log("Rendering:");
   log("- routes:", result);
   return (
-    <div className="map-container">
+    <>
       <div className="sidebar">
         {routes.current.map((route, index) => (
           <React.Fragment key={`marker-${index}`}>
@@ -333,7 +336,7 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
           </React.Fragment>
         ))}
       </div>
-      <div id="map"></div>
+      <div id="route-map"></div>
       <div className="sidebar">
         <div className="highlighted-field">
           <div className="note">
@@ -349,7 +352,6 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
             </div>
           </div>
         </div>
-
         <div className="highlighted-field">
           <div className="note">
             <div className="note-title">Help</div>
@@ -380,7 +382,7 @@ export default function RouteMap({ result }: { result: ParsedRoute[] }) {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
