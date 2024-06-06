@@ -214,7 +214,7 @@ export default function Map({
     <>
       {anyOf([routePoints, guidanceInstructions, waypoints]) && (
         <div id="checkboxes">
-          {routePoints.length > 0 && (
+          {routeMarkers.current.getLayers().length > 0 && (
             <div className="checkbox-container">
               <input
                 type="checkbox"
@@ -225,7 +225,7 @@ export default function Map({
               <label htmlFor="routePoints">Route points</label>
             </div>
           )}
-          {guidanceInstructions.length > 0 && (
+          {guidanceMarkers.current.getLayers().length > 0 && (
             <div className="checkbox-container">
               <input
                 type="checkbox"
@@ -236,15 +236,15 @@ export default function Map({
               <label htmlFor="instructions">Guidance instructions</label>
             </div>
           )}
-          {waypoints.length > 0 && (
+          {waypointMarkers.current.getLayers().length > 0 && (
             <div className="checkbox-container">
               <input
                 type="checkbox"
-                id=""
+                id="waypoints"
                 checked={waypointVisibility}
                 onChange={(e) => setWaypointVisibility(e.target.checked)}
               />
-              <label htmlFor="instructions">Waypoints</label>
+              <label htmlFor="waypoints">Waypoints</label>
             </div>
           )}
         </div>
@@ -309,6 +309,7 @@ function createGuidanceMarkers(
 ): L.LayerGroup {
   const markers = L.layerGroup();
   guidanceInstructions.forEach((instruction, index) => {
+    if (instruction.maneuverPoint === undefined) return;
     const { latitude, longitude } = instruction.maneuverPoint;
     const marker = L.marker([latitude, longitude], {
       icon: L.icon({
