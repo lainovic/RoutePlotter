@@ -196,26 +196,26 @@ function buildRouteLegs(legs: RouteLeg[], serializer: Serializer) {
         // TODO generate some guidance instructions
         serializer.append("instructions = emptyList(),");
         serializer.wrap("Summary(", "),", (serializer) => {
-          serializer.append(`length = ${leg.summary.lengthInMeters},`);
-          serializer.append(`travelTime = ${leg.summary.travelTimeInSeconds},`);
-          if (leg.summary.trafficDelayInSeconds) {
+          serializer.append(`length = ${leg.summary?.lengthInMeters},`);
+          serializer.append(`travelTime = ${leg.summary?.travelTimeInSeconds},`);
+          if (leg.summary?.trafficDelayInSeconds) {
             serializer.append(
-              `trafficDelay = ${leg.summary.trafficDelayInSeconds},`
+              `trafficDelay = ${leg.summary?.trafficDelayInSeconds},`
             );
           }
-          if (leg.summary.trafficLengthInMeters) {
+          if (leg.summary?.trafficLengthInMeters) {
             serializer.append(
               `trafficLength = ${leg.summary.trafficLengthInMeters},`
             );
           }
-          if (leg.summary.departureTime) {
+          if (leg.summary?.departureTime) {
             serializer.append(
               `departureTimeWithZone = ${formatDateTimeWithMilliseconds(
                 leg.summary.departureTime
               )},`
             );
           }
-          if (leg.summary.arrivalTime) {
+          if (leg.summary?.arrivalTime) {
             serializer.append(
               `arrivalTimeWithZone = ${formatDateTimeWithMilliseconds(
                 leg.summary.arrivalTime
