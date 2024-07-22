@@ -7,7 +7,7 @@ import {
   Maybe,
   ApplicationError,
 } from "./types";
-import { log, error as logError } from "./logging_utils";
+import { log, error as logError, logAsRouteObjects } from "./logging_utils";
 
 export const supportedVersion = "0.0.12";
 
@@ -67,6 +67,7 @@ function parseJSON(text: string): MaybeRoutes {
   }
   log("Parsed JSON:", json);
   if (json && json.routes && Array.isArray(json.routes)) {
+    logAsRouteObjects(json.routes);
     return Maybe.success({
       routes: json.routes,
       message: { value: "JSON" },
@@ -90,11 +91,16 @@ function parsePastedCoordinates(text: string): MaybeRoutes {
     legs: [
       {
         points: points,
+        summary: null
       },
     ],
     summary: {
       lengthInMeters: calculateDistanceInMeters(points),
       travelTimeInSeconds: 0,
+      trafficDelayInSeconds: null,
+      trafficLengthInMeters: null,
+      departureTime: null,
+      arrivalTime: null,
     },
     guidance: {
       instructions: [],
@@ -180,11 +186,16 @@ function parseTTP(text: string): MaybeRoutes {
     legs: [
       {
         points: points,
+        summary: null
       },
     ],
     summary: {
       lengthInMeters: calculateDistanceInMeters(points),
       travelTimeInSeconds: calculateTravelTimeInSeconds(points),
+      trafficDelayInSeconds: null,
+      trafficLengthInMeters: null,
+      departureTime: null,
+      arrivalTime: null,
     },
     guidance: {
       instructions: [],

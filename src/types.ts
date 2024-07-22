@@ -1,5 +1,3 @@
-import { log } from "./logging_utils";
-
 export interface NavigationPoint {
   timestamp: string | any | null;
   latitude: number | any;
@@ -7,19 +5,37 @@ export interface NavigationPoint {
   speed: number | any | null;
 }
 
+export interface RoutePoint {
+  coordinates: NavigationPoint;
+  routeOffset: number;
+  travelTime: number;
+}
+
+export interface RouteStop {
+  coordinates: NavigationPoint;
+  routeOffset: number;
+}
+
 export interface Route {
-  legs: {
-    points: NavigationPoint[];
-  }[];
+  legs: RouteLeg[];
   summary: Summary;
   guidance: {
     instructions: GuidanceInstruction[];
   };
 }
 
+export interface RouteLeg {
+  summary: Summary | null;
+  points: NavigationPoint[];
+}
+
 export interface Summary {
   lengthInMeters: number;
   travelTimeInSeconds: number;
+  trafficDelayInSeconds: number | null;
+  trafficLengthInMeters: number | null;
+  departureTime: string | null;
+  arrivalTime: string | null;
 }
 
 export interface GuidanceInstruction {
@@ -56,16 +72,13 @@ export class Maybe<E, T> {
   constructor(error: E | null = null, result: T | null = null) {
     this.error = error;
     this.result = result;
-    log("Maybe constructor", this.error, this.result);
   }
 
   static success<E, T>(result: T): Maybe<E, T> {
-    log("Maybe success", result);
     return new Maybe<E, T>(null, result);
   }
 
   static failure<E, T>(error: E): Maybe<E, T> {
-    log("Maybe failure", error);
     return new Maybe<E, T>(error, null);
   }
 
@@ -85,18 +98,14 @@ export class Maybe<E, T> {
   }
 
   ifFailure(callback: (error: E) => void): Maybe<E, T> {
-    log("if failure?", this.error);
     if (this.isFailure()) {
-      log("Failure:", this.error!!);
       callback(this.error!!);
     }
     return this;
   }
 
   ifSuccess(callback: (result: T) => void): Maybe<E, T> {
-    log("if success?", this.result);
     if (this.isSuccess()) {
-      log("Success:", this.result!!);
       callback(this.result!!);
     }
     return this;

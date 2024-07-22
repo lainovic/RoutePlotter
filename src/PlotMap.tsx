@@ -207,7 +207,7 @@ export default function Map({
   }, [routePoints]);
 
   log("Rendering:");
-  log("- Route points:", routePoints);
+  log("- Route points:");
   log("- Guidance instructions:", guidanceInstructions);
   log("- Waypoints:", waypoints);
   return (
